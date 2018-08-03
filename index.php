@@ -127,6 +127,7 @@ $page->add_changelog('July 2, 2018', array(
     'Added LightChaosman credit for data -- should\'ve had that in for awhile!'
 ));
 $page->add_changelog('July 13, 2018', 'Correctly display delays which aren\'t whole numbers');
+$page->add_changelog('August 3, 2018', 'Added a link to the freshly-uploaded source at Github');
 $page->apoc_header();
 ?>
 
@@ -208,6 +209,21 @@ is the index of the <tt>ConsolidatedOutputLinkData</tt> entry being used
 to provide the link.  Optionally, a third entry may appear under that, 
 prefixed with a lowercase "d", which will specify a delay before triggering
 the next behavior.
+</p>
+
+</blockquote>
+
+<h2>Sourcecode</h2>
+
+<blockquote>
+
+<p>
+The code (and data) for this page exist at github:
+<a href="https://github.com/apocalyptech/borderlands-bpd">https://github.com/apocalyptech/borderlands-bpd</a>.
+The code is licensed under the <a href="https://opensource.org/licenses/BSD-3-Clause">3-clause BSD license</a>.
+Feel free to run it locally yourself, if you like, or even host it
+elsewhere.  I intend to keep hosting this on my own site, but should
+it ever go dark, having mirrors is always nice.
 </p>
 
 </blockquote>
