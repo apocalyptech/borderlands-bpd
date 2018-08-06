@@ -128,6 +128,7 @@ $page->add_changelog('July 2, 2018', array(
 ));
 $page->add_changelog('July 13, 2018', 'Correctly display delays which aren\'t whole numbers');
 $page->add_changelog('August 3, 2018', 'Added a link to the freshly-uploaded source at Github');
+$page->add_changelog('August 6, 2018', 'Updated TPS BPD data to BLCMM\'s data, rather than my own -- more complete definitions in a variety of cases');
 $page->apoc_header();
 ?>
 
