@@ -1,3 +1,5 @@
 *.swp
 __pycache__
 cache/*.png
+generate_all_dots.py
+dotfiles
