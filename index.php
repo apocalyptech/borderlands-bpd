@@ -171,7 +171,7 @@ if (count($errors) > 0)
 
 <blockquote>
 
-<img src="impact.png?v=2" alt="Graph of base Amp shield BPD">
+<img src="impact.png?v=3" alt="Graph of base Amp shield BPD">
 
 <p>
 Green nodes are the initial Events in <tt>EventData2</tt> which kick off
