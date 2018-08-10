@@ -31,15 +31,20 @@ import sys
 import argparse
 from ftexplorer.data import Data
 
-broken_cold_fill = 'red'
-event_fill = 'chartreuse2'
-event_link_color = 'chartreuse2'
+###
+### Color/shape information
+###
 
-invalid_event_shape = 'ellipse'
-invalid_event_fill = 'red'
+style_default = 'shape=box style=rounded'
+style_broken_cold = 'style=filled fillcolor=red'
+style_event = 'style=filled fillcolor=chartreuse2'
+style_event_edge = 'color=chartreuse2'
+style_event_invalid = 'style=filled fillcolor=lightpink2 shape=cds margin=0.15'
+style_event_remote = 'style=filled fillcolor=gold1 shape=cds margin=0.15'
 
-remote_event_shape = 'ellipse'
-remote_event_fill = 'gold1'
+###
+### Functions
+###
 
 def compliment(number):
     """
@@ -68,7 +73,7 @@ def follow(link, cold_data, behavior_data, coming_from, seq_idx, cold_followed):
             cold = cold_data[cold_index]
         except IndexError:
             broken_id = 'broken_{}_{}'.format(seq_idx, cold_order_idx)
-            print('  {} [label=<BROKEN>,style=filled,fillcolor={}];'.format(broken_id, broken_cold_fill))
+            print('  {} [label=<BROKEN> {}];'.format(broken_id, style_broken_cold))
             print('  {} -> {}'.format(coming_from, broken_id))
             return
         (link_id, bindex) = compliment(cold['LinkIdAndLinkedBehavior'])
@@ -179,11 +184,11 @@ def generate_dot(node, bpd_name):
     print('  labelloc = "t";')
     print('  fontsize = 25;')
     print('  label = <{}>;'.format(bpd_name))
-    print('  node [shape=box,style=rounded];')
+    print('  node [{}];'.format(style_default))
     print('')
 
     print('  {')
-    print('    node [style=filled,fillcolor={}];'.format(event_fill))
+    print('    node [{}];'.format(style_event))
     for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
         seq_name = seq['BehaviorSequenceName']
@@ -277,15 +282,15 @@ def generate_dot(node, bpd_name):
 
     if len(invalid_events) > 0:
         print('  {')
-        print('    node [style=filled,fillcolor={},shape={}];'.format(invalid_event_fill, invalid_event_shape))
+        print('    node [{}];'.format(style_event_invalid))
         for (node_id, event_name) in invalid_events:
-            print('    {} [label=<{} (invalid)>];'.format(node_id, event_name))
+            print('    {} [label=<{}<br/>(possibly invalid?)>];'.format(node_id, event_name))
         print('  }')
         print('')
 
     if len(remote_events) > 0:
         print('  {')
-        print('    node [style=filled,fillcolor={},shape={}];'.format(remote_event_fill, remote_event_shape))
+        print('    node [{}];'.format(style_event_remote))
         for (node_id, remote_bpd, event_name) in remote_events:
             if ':' in remote_bpd:
                 (first, second) = remote_bpd.split(':', 2)
@@ -297,7 +302,7 @@ def generate_dot(node, bpd_name):
 
     if len(event_links) > 0:
         print('  {')
-        print('    edge [color={}];'.format(event_link_color))
+        print('    edge [{}];'.format(style_event_edge))
         for (link_from, link_to) in event_links:
             print('    {} -> {};'.format(link_from, link_to))
         print('  }')
@@ -327,9 +332,18 @@ def generate_dot(node, bpd_name):
     print('')
     print('}')
 
+###
+### Now process to find out what we're supposed to do
+###
+
 if __name__ == '__main__':
 
     if 'generate_all_dots' in sys.argv[0]:
+
+        ###
+        ### Generate all possible graphviz dot files (really only used for
+        ### my own debugging)
+        ###
 
         dotdir = 'dotfiles'
 
@@ -389,6 +403,10 @@ if __name__ == '__main__':
         print('{} dotfiles generated'.format(generated), file=sys.stderr)
 
     else:
+
+        ###
+        ### Main application - generate a single graphviz dot file, to STDOUT.
+        ###
 
         parser = argparse.ArgumentParser(
             description='Generate a graphviz DOT file showing a borderlands BPD',

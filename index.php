@@ -219,7 +219,12 @@ the next behavior.
 
 <p>
 Links which use a <tt>RemoteCustomEvent</tt> behavior to link to a fresh
-Event will be colored in green, like the Event nodes themselves.
+Event will be colored in green, like the Event nodes themselves.  If a
+<tt>RemoteCustomEvent</tt> links to an event name which isn't present in
+this BPD, the link will be shown in a node which looks a bit like an
+arrow pointing to the right.  Those nodes will be light red for event
+names which appear to be invalid generally, and gold for events which
+explicitly link to other BPDs.
 </p>
 
 </blockquote>
