@@ -129,6 +129,10 @@ $page->add_changelog('July 2, 2018', array(
 $page->add_changelog('July 13, 2018', 'Correctly display delays which aren\'t whole numbers');
 $page->add_changelog('August 3, 2018', 'Added a link to the freshly-uploaded source at Github');
 $page->add_changelog('August 6, 2018', 'Updated TPS BPD data to BLCMM\'s data, rather than my own -- more complete definitions in a variety of cases');
+$page->add_changelog('unreleased', array(
+    'Added EventData2 index to Event nodes',
+    'Link RemoteCustomEvent Behaviors where possible',
+));
 $page->apoc_header();
 ?>
 
@@ -173,7 +177,8 @@ Green nodes are the initial Events in <tt>EventData2</tt> which kick off
 the BPD trees.  The number in brackets is the index in the
 <tt>BehaviorSequences</tt> array which the event lives.  If the main
 BehaviorSequence has a name, it will be here.  The Event name itself is
-always shown after a period.
+always shown after a period.  The second index in brackets is the
+index of the event inside the <tt>EventData2</tt> index.
 </p>
 
 <p>
@@ -210,6 +215,11 @@ is the index of the <tt>ConsolidatedOutputLinkData</tt> entry being used
 to provide the link.  Optionally, a third entry may appear under that, 
 prefixed with a lowercase "d", which will specify a delay before triggering
 the next behavior.
+</p>
+
+<p>
+Links which use a <tt>RemoteCustomEvent</tt> behavior to link to a fresh
+Event will be colored in green, like the Event nodes themselves.
 </p>
 
 </blockquote>

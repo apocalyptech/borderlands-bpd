@@ -51,6 +51,16 @@ bpd_name = args.bpd.lower()
 data = Data(game)
 cold_followed = set()
 
+broken_cold_fill = 'red'
+event_fill = 'chartreuse2'
+event_link_color = 'chartreuse2'
+
+invalid_event_shape = 'ellipse'
+invalid_event_fill = 'red'
+
+remote_event_shape = 'ellipse'
+remote_event_fill = 'gold1'
+
 def compliment(number):
     """
     Returns a two's-compliment tuple for the given number.
@@ -79,7 +89,7 @@ def follow(link, cold_data, behavior_data, coming_from, seq_idx):
             cold = cold_data[cold_index]
         except IndexError:
             broken_id = 'broken_{}_{}'.format(seq_idx, cold_order_idx)
-            print('  {} [label=<BROKEN>,style=filled,fillcolor=red];'.format(broken_id))
+            print('  {} [label=<BROKEN>,style=filled,fillcolor={}];'.format(broken_id, broken_cold_fill))
             print('  {} -> {}'.format(coming_from, broken_id))
             return
         (link_id, bindex) = compliment(cold['LinkIdAndLinkedBehavior'])
@@ -155,11 +165,36 @@ def get_var_extra(number):
     else:
         return ''
 
+def get_rce_bpd(rce):
+    """
+    Gets the BPD pointed-to by the given RemoteCustomEvent
+    """
+    string_build = []
+    # This is actually a bit weird 'cause the output of these vars uses
+    # bracket-based indexes, as if they were top-level vars, but they're
+    # not.  So we're doing some special processing on 'em
+    pcns = {}
+    for (name, value) in rce['ProviderDefinitionPathName'].items():
+        if value and value != '':
+            if name.startswith('PathComponentNames['):
+                pcns[int(name[19:-1])] = value.strip('"')
+    for index in sorted(pcns.keys()):
+        element = pcns[index]
+        if len(string_build) == 0:
+            string_build.append(element)
+        elif (element.startswith('AIBehaviorProviderDefinition_') or 
+                element.startswith('BehaviorProviderDefinition_')):
+            string_build.append(':{}'.format(element))
+        else:
+            string_build.append('.{}'.format(element))
+    return ''.join(string_build)
+
 node = data.get_node_by_full_object(bpd_name)
 if not node:
     sys.exit(1)
 
 bpd = node.get_structure()
+event_map = {}
 print('digraph bpd {')
 print('')
 print('  labelloc = "t";')
@@ -169,7 +204,7 @@ print('  node [shape=box,style=rounded];')
 print('')
 
 print('  {')
-print('    node [style=filled,fillcolor=chartreuse2];')
+print('    node [style=filled,fillcolor={}];'.format(event_fill))
 for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
     seq_name = seq['BehaviorSequenceName']
@@ -184,13 +219,19 @@ for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
         if event['UserData']['bEnabled'] == 'True':
 
             var_extra = get_var_extra(event['OutputVariables']['ArrayIndexAndLength'])
+            event_name = event['UserData']['EventName'].strip('"')
+            event_name_lower = event_name.lower()
+            event_id = 'event_{}_{}'.format(seq_idx, event_idx)
+            if event_name_lower not in event_map:
+                event_map[event_name_lower] = []
+            event_map[event_name_lower].append(event_id)
 
-            print('    event_{}_{} [label=<[{}]{}.{}{}>];'.format(
-                seq_idx,
-                event_idx,
+            print('    {} [label=<[{}]{}.{}[{}]{}>];'.format(
+                event_id,
                 seq_idx,
                 seq_name.strip('"'),
-                event['UserData']['EventName'].strip('"'),
+                event_name,
+                event_idx,
                 var_extra,
                 ))
 
@@ -199,6 +240,9 @@ for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 print('  }')
 print('')
 
+event_links = []
+invalid_events = []
+remote_events = []
 for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
     seq_name = seq['BehaviorSequenceName']
@@ -211,22 +255,70 @@ for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
     for (behavior_idx, behavior) in enumerate(behavior_data):
         if behavior['Behavior'] != 'None':
-            (behavior_type, behavior_class, junk) = behavior['Behavior'].split("'", 2)
-            if behavior_class.lower().startswith(bpd_name.lower()):
-                behavior_class = behavior_class[len(bpd_name)+1:]
+            (behavior_type, full_behavior_class, junk) = behavior['Behavior'].split("'", 2)
+            if full_behavior_class.lower().startswith(bpd_name.lower()):
+                behavior_class = full_behavior_class[len(bpd_name)+1:]
+            else:
+                behavior_class = full_behavior_class
         else:
             behavior_type = ''
             behavior_class = 'None'
+            full_behavior_class = 'None'
 
         var_extra = get_var_extra(behavior['LinkedVariables']['ArrayIndexAndLength'])
+        behavior_id = 'behavior_{}_{}'.format(seq_idx, behavior_idx)
 
-        print('  behavior_{}_{} [label=<[{}] {}{}>];'.format(
-            seq_idx,
-            behavior_idx,
+        print('  {} [label=<[{}] {}{}>];'.format(
+            behavior_id,
             behavior_idx,
             behavior_class,
             var_extra,
             ))
+
+        # We can draw some more links if we're a remotecustomevent
+        if behavior_type == 'Behavior_RemoteCustomEvent':
+            rce = data.get_struct_by_full_object(full_behavior_class)
+            if rce:
+                rce_bpd = get_rce_bpd(rce)
+                event_name = rce['CustomEventName']
+                if rce_bpd.lower() == bpd_name:
+                    if event_name.lower() in event_map:
+                        for event_id in event_map[event_name.lower()]:
+                            event_links.append((behavior_id, event_id))
+                    else:
+                        invalid_event_name_id = 'invalid_event_{}'.format(len(invalid_events))
+                        invalid_events.append((invalid_event_name_id, event_name))
+                        event_links.append((behavior_id, invalid_event_name_id))
+                else:
+                    really_remote_id = 'really_remote_id_{}'.format(len(remote_events))
+                    remote_events.append((really_remote_id, rce_bpd, event_name))
+                    event_links.append((behavior_id, really_remote_id))
+
+    print('')
+
+if len(invalid_events) > 0:
+    print('  {')
+    print('    node [style=filled,fillcolor={},shape={}];'.format(invalid_event_fill, invalid_event_shape))
+    for (node_id, event_name) in invalid_events:
+        print('    {} [label=<{} (invalid)>];'.format(node_id, event_name))
+    print('  }')
+    print('')
+
+if len(remote_events) > 0:
+    print('  {')
+    print('    node [style=filled,fillcolor={},shape={}];'.format(remote_event_fill, remote_event_shape))
+    for (node_id, remote_bpd, event_name) in remote_events:
+        (first, second) = remote_bpd.split(':', 2)
+        print('    {} [label=<{}:<br/>{}<br/>{}>];'.format(node_id, first, second, event_name))
+    print('  }')
+    print('')
+
+if len(event_links) > 0:
+    print('  {')
+    print('    edge [color={}];'.format(event_link_color))
+    for (link_from, link_to) in event_links:
+        print('    {} -> {};'.format(link_from, link_to))
+    print('  }')
     print('')
 
 for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
