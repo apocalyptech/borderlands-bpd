@@ -28,6 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_once('levels.php');
+
 $errors = array();
 $game = 'bl2';
 if (array_key_exists('action', $_REQUEST))
@@ -42,62 +44,80 @@ if (array_key_exists('action', $_REQUEST))
             {
                 if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
                 {
-                    $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . '.png';
-                    if (!file_exists($cache_filename))
-                    {
-                        $output = array();
-                        exec("/usr/bin/python36 bpd_dot.py $game $bpd", $output, $return_val);
-                        $output_full = implode("\n", $output);
-                        if ($return_val == 0)
+                    $level = trim($_REQUEST['level']);
+                    if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
+
+                        if ($level == '')
                         {
-                            $descriptors = array(
-                               0 => array("pipe", "r"),
-                               1 => array("pipe", "w"),
-                               2 => array("pipe", "w")
-                            );
-                            $pipes = array();
-                            $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -Tpng', $descriptors, $pipes);
-
-                            if (is_resource($process))
+                            $cache_extra = '';
+                            $cmd_extra = '';
+                        }
+                        else
+                        {
+                            $cache_extra = '_' . strtolower($level);
+                            $cmd_extra = ' -l ' . $level;
+                        }
+                        $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.png';
+                        if (!file_exists($cache_filename))
+                        {
+                            $output = array();
+                            exec("/usr/bin/python36 bpd_dot.py$cmd_extra $game $bpd", $output, $return_val);
+                            $output_full = implode("\n", $output);
+                            if ($return_val == 0)
                             {
-                                fwrite($pipes[0], $output_full);
-                                fclose($pipes[0]);
-                                $image = stream_get_contents($pipes[1]);
-                                fclose($pipes[1]);
-                                fclose($pipes[2]);
-                                proc_close($process);
+                                $descriptors = array(
+                                   0 => array("pipe", "r"),
+                                   1 => array("pipe", "w"),
+                                   2 => array("pipe", "w")
+                                );
+                                $pipes = array();
+                                $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -Tpng', $descriptors, $pipes);
 
-                                $outfile = fopen($cache_filename, 'wb');
-                                if ($outfile)
+                                if (is_resource($process))
                                 {
-                                    fwrite($outfile, $image);
-                                    fclose($outfile);
+                                    fwrite($pipes[0], $output_full);
+                                    fclose($pipes[0]);
+                                    $image = stream_get_contents($pipes[1]);
+                                    fclose($pipes[1]);
+                                    fclose($pipes[2]);
+                                    proc_close($process);
+
+                                    $outfile = fopen($cache_filename, 'wb');
+                                    if ($outfile)
+                                    {
+                                        fwrite($outfile, $image);
+                                        fclose($outfile);
+                                    }
+                                    else
+                                    {
+                                        array_push($errors, 'Could not open cache for writing');
+                                    }
                                 }
                                 else
                                 {
-                                    array_push($errors, 'Could not open cache for writing');
+                                    array_push($errors, 'Error generating graph');
                                 }
                             }
                             else
                             {
-                                array_push($errors, 'Error generating graph');
+                                array_push($errors, 'Specified class was not found');
                             }
                         }
-                        else
+                        if (file_exists($cache_filename))
                         {
-                            array_push($errors, 'Specified class was not found');
+                            header('Content-Type: image/png');
+                            header('Content-Disposition: attachment; filename="bpd_image.png"');
+                            readfile($cache_filename);
+                            exit();
+                        }
+                        elseif (count($errors) == 0)
+                        {
+                            array_push($errors, 'Could not write to cache');
                         }
                     }
-                    if (file_exists($cache_filename))
+                    else
                     {
-                        header('Content-Type: image/png');
-                        header('Content-Disposition: attachment; filename="bpd_image.png"');
-                        readfile($cache_filename);
-                        exit();
-                    }
-                    elseif (count($errors) == 0)
-                    {
-                        array_push($errors, 'Could not write to cache');
+                        array_push($errors, 'Invalid level specified');
                     }
                 }
                 else
@@ -120,6 +140,8 @@ if (array_key_exists('action', $_REQUEST))
 
 include('../../inc/apoc.php');
 $page->set_title('Borderlands 2 / The Pre-Sequel BPD Graphs');
+$page->add_js('bpd_js.php');
+$page->add_onload('populateLevelList();');
 $page->add_changelog('June 19, 2018', 'Initial post');
 $page->add_changelog('June 28, 2018', 'Changed to rectangles rather than ellipses for the nodes');
 $page->add_changelog('July 2, 2018', array(
@@ -158,13 +180,16 @@ if (count($errors) > 0)
 ?>
 
 <form action="index.php" method="get">
-<select name="game" id="game">
+<select name="game" id="game" onChange="populateLevelList();">
 <option value="bl2"<?php if ($game == 'bl2') { echo ' selected'; } ?>>Borderlands 2</option>
 <option value="tps"<?php if ($game == 'tps') { echo ' selected'; } ?>>The Pre-Sequel</option>
 </select>
 <input type="text" name="bpd" id="bpd" size=80>
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
+<br/>
+<i>Optional: Select a level to enable linking BPDs through Level Kismets: </i>
+<select name="level" id="level"></select>
 </form>
 
 <h2>Output Reference</h2>

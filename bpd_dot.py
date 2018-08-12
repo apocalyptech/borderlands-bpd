@@ -30,6 +30,7 @@ import os
 import sys
 import argparse
 from ftexplorer.data import Data
+from level_sequence_event_names import level_sequence_event_names
 
 ###
 ### Color/shape information
@@ -41,6 +42,9 @@ style_event = 'style=filled fillcolor=chartreuse2'
 style_event_edge = 'color=chartreuse2'
 style_event_invalid = 'style=filled fillcolor=lightpink2 shape=cds margin=0.15'
 style_event_remote = 'style=filled fillcolor=gold1 shape=cds margin=0.15'
+style_seq_event = 'style=filled fillcolor=deepskyblue1'
+style_event_unknown = 'style=filled fillcolor=deepskyblue1'
+style_seq_event_edge = 'color=deepskyblue1'
 
 ###
 ### Functions
@@ -171,7 +175,7 @@ def get_rce_bpd(rce):
             string_build.append('.{}'.format(element))
     return ''.join(string_build)
 
-def generate_dot(node, bpd_name):
+def generate_dot(node, bpd_name, seq_event_map):
     """
     Outputs a graphviz dot file from the given node
     """
@@ -227,6 +231,10 @@ def generate_dot(node, bpd_name):
     event_links = []
     invalid_events = []
     remote_events = []
+    seq_events = []
+    unknown_events = []
+    seq_event_links = []
+    seq_startpoints = set()
     for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
         seq_name = seq['BehaviorSequenceName']
@@ -278,6 +286,45 @@ def generate_dot(node, bpd_name):
                         remote_events.append((really_remote_id, rce_bpd, event_name))
                         event_links.append((behavior_id, really_remote_id))
 
+            # Handle CustomEvents and RemoteEvents.  Functionally these appear to be nearly
+            # identical, as far as BL2+TPS's datasets are concerned.  RemoteEvents in our
+            # datasets seem to only ever link to seqvar event names, and don't seem to ever
+            # link back to BPD event names, whereas CustomEvents can.  Contrariwise,
+            # CustomEvents nearly always seem to link to the same BPD or to other BPDs, and
+            # rarely to seqvar event names (though it does seem to do that sometimes).
+            # Ayway, we may as well just check for both.  Note that currently we don't
+            # handle linking to remote BPDs, but if we have a level specified, we may be
+            # able to follow into seqvar events.
+            elif behavior_type == 'Behavior_CustomEvent' or behavior_type=='Behavior_RemoteEvent':
+                if behavior_type == 'Behavior_CustomEvent':
+                    attr_name = 'CustomEventName'
+                else:
+                    attr_name = 'EventName'
+                rce = data.get_struct_by_full_object(full_behavior_class)
+                if rce:
+                    event_name = rce[attr_name]
+                    event_name_lower = event_name.lower()
+                    got_a_link = False
+                    # First check for any links within the same BPD
+                    if event_name_lower in event_map:
+                        got_a_link = True
+                        for event_id in event_map[event_name_lower]:
+                            event_links.append((behavior_id, event_id))
+                    # Now for any links outside (will probably never happen)
+                    if event_name_lower in seq_event_map:
+                        got_a_link = True
+                        for seq_obj in seq_event_map[event_name_lower]:
+                            seq_id = 'seq_id_{}'.format(len(seq_events))
+                            seq_events.append((seq_id, seq_obj))
+                            seq_event_links.append((behavior_id, seq_id))
+                            seq_startpoints.add(seq_obj)
+                    # If we haven't found any links, put the event name out there,
+                    # at least.
+                    if not got_a_link:
+                        unknown_event_id = 'unknown_event_id_{}'.format(len(unknown_events))
+                        unknown_events.append((unknown_event_id, event_name))
+                        seq_event_links.append((behavior_id, unknown_event_id))
+
         print('')
 
     if len(invalid_events) > 0:
@@ -300,10 +347,38 @@ def generate_dot(node, bpd_name):
         print('  }')
         print('')
 
+    if len(seq_events) > 0:
+        print('  {')
+        print('    node [{}];'.format(style_seq_event))
+        for (node_id, seq_name) in seq_events:
+            print('    {} [label=<{}>];'.format(node_id, seq_name))
+        print('  }')
+        print('')
+
+    if len(unknown_events) > 0:
+        print('  {')
+        print('    node [{}];'.format(style_event_unknown))
+        for (node_id, event_name) in unknown_events:
+            if len(seq_event_map) == 0:
+                extra_label = ',<br/>or to an unknown SeqEvent'
+            else:
+                extra_label = ''
+            print('    {} [label=<{}<br/><i>(Unknown Event,<br/>may call to other BPD{})</i>>];'.format(node_id, event_name, extra_label))
+        print('  }')
+        print('')
+
     if len(event_links) > 0:
         print('  {')
         print('    edge [{}];'.format(style_event_edge))
         for (link_from, link_to) in event_links:
+            print('    {} -> {};'.format(link_from, link_to))
+        print('  }')
+        print('')
+
+    if len(seq_event_links) > 0:
+        print('  {')
+        print('    edge [{}];'.format(style_seq_event_edge))
+        for (link_from, link_to) in seq_event_links:
             print('    {} -> {};'.format(link_from, link_to))
         print('  }')
         print('')
@@ -392,7 +467,7 @@ if __name__ == '__main__':
 
                     # aaaand generate.
                     try:
-                        generate_dot(node, bpd_name)
+                        generate_dot(node, bpd_name, {})
                         generated += 1
                     except Exception as e:
                         print('', file=sys.stderr)
@@ -412,6 +487,11 @@ if __name__ == '__main__':
             description='Generate a graphviz DOT file showing a borderlands BPD',
             )
 
+        parser.add_argument('-l', '--level',
+            required=False,
+            help="Optional level in which the BPD is running, to link in sequence data too",
+            )
+
         parser.add_argument('game',
             choices=['bl2', 'tps'],
             help='Which game to search',
@@ -426,10 +506,16 @@ if __name__ == '__main__':
         game = args.game.upper()
         bpd_name = args.bpd
 
+        seq_event_map = {}
+        if args.level and args.level != '':
+            if args.level.lower() not in level_sequence_event_names[game]:
+                raise argparse.ArgumentTypeError('Level name {} not found in {}'.format(args.level, game))
+            seq_event_map = level_sequence_event_names[game][args.level.lower()]
+
         data = Data(game)
 
         node = data.get_node_by_full_object(bpd_name)
         if not node:
             sys.exit(1)
 
-        generate_dot(node, bpd_name)
+        generate_dot(node, bpd_name, seq_event_map)
