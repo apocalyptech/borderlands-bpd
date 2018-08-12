@@ -189,7 +189,25 @@ if (count($errors) > 0)
 <input type="submit" value="Generate">
 <br/>
 <i>Optional: Select a level to enable linking BPDs through Level Kismets: </i>
-<select name="level" id="level"></select>
+<select name="level" id="level">
+<?php
+// May as well prepopulate this in case someone's got Javascript disabled
+foreach ($levels as $game => $level_list)
+{
+    foreach ($level_list as $level_tuple) {
+        echo '<option value="' . $level_tuple[1] . '"';
+        if (array_key_exists('level', $_REQUEST))
+        {
+            if ($_REQUEST['level'] == $level_tuple[1])
+            {
+                echo ' selected';
+            }
+        }
+        echo '>' . strtoupper($game) . ' - ' . $level_tuple[0] . "</option>\n";
+    }
+}
+?>
+</select>
 </form>
 
 <h2>Output Reference</h2>
