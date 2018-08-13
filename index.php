@@ -104,9 +104,13 @@ if (array_key_exists('action', $_REQUEST))
                                     array_push($errors, 'Error generating graph');
                                 }
                             }
-                            else
+                            elseif ($return_val == 2)
                             {
                                 array_push($errors, 'Specified class was not found');
+                            }
+                            else
+                            {
+                                array_push($errors, 'Unknown error encountered when generating graph; probably a code problem.  Let me know what your object name and options were, please!');
                             }
                         }
                         if (file_exists($cache_filename))

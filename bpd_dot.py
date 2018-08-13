@@ -182,9 +182,10 @@ class Kismets(object):
     when the rest was just procedural
     """
 
-    def __init__(self, data, seq_event_map={}, from_bpd=None,
-            follow_to_new_base=False):
+    def __init__(self, data, bpd_event_map, seq_event_map,
+            from_bpd=None, follow_to_new_base=False):
         self.data = data
+        self.bpd_event_map = bpd_event_map
         self.seq_event_map = seq_event_map
         self.from_bpd = from_bpd
         self.follow_to_new_base = follow_to_new_base
@@ -448,7 +449,8 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
         seq_events = []
         unknown_events = []
         seq_event_links = []
-        kismets = Kismets(data, seq_event_map=seq_event_map, from_bpd=bpd_name,
+        kismets = Kismets(data, bpd_event_map=event_map, seq_event_map=seq_event_map,
+                from_bpd=bpd_name,
                 follow_to_new_base=kismet_follow_class)
         for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
@@ -619,7 +621,8 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
         # Here's our branch if we're just doing a Kismet tree
         is_bpd = False
 
-        kismets = Kismets(data, seq_event_map=seq_event_map,
+        kismets = Kismets(data, bpd_event_map=event_map,
+                seq_event_map=seq_event_map,
                 follow_to_new_base=kismet_follow_class)
         kismets.start_path(bpd_name)
 
@@ -762,8 +765,13 @@ if __name__ == '__main__':
 
         data = Data(game)
 
-        node = data.get_node_by_full_object(bpd_name)
-        if not node:
-            sys.exit(1)
+        try:
+            node = data.get_node_by_full_object(bpd_name)
+            if not node:
+                print('ERROR: {} could not be found'.format(bpd_name), file=sys.stderr)
+                sys.exit(2)
+        except Exception as e:
+            print('ERROR: {} could not be loaded: {}'.format(bpd_name, str(e)))
+            sys.exit(2)
 
         generate_dot(node, bpd_name, seq_event_map, args.follow)
