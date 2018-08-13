@@ -149,7 +149,7 @@ if (array_key_exists('action', $_REQUEST))
 }
 
 include('../../inc/apoc.php');
-$page->set_title('Borderlands 2 / The Pre-Sequel BPD Graphs');
+$page->set_title('Borderlands 2 / The Pre-Sequel BPD/Kismet Graphs');
 $page->add_js('bpd_js.php');
 $page->add_onload('populateLevelList();');
 $page->add_changelog('June 19, 2018', 'Initial post');
@@ -166,14 +166,20 @@ $page->add_changelog('August 10, 2018', array(
     'Link RemoteCustomEvent Behaviors where possible',
     'Updated BL2 BPD data to BLCMM\'s latest -- there were a few things missing, I think'
 ));
+$page->add_changelog('August 13, 2018', array(
+    'Allow graphing of Kismet sequences as well',
+    'BPDs can link to Kismet sequence events, if a level is chosen to operate in',
+));
 $page->apoc_header();
 ?>
 
 <p>
-Just a page to generate graphs from Borderlands 2/TPS BPDs.  If you
-don't know what a BPD is, this isn't for you.  Many thanks to LightChaosman
+Just a page to generate graphs from Borderlands 2/TPS BPDs and Kismets.  If you
+don't know what a BPD or Kismet is, this isn't for you.  Many thanks to LightChaosman
 for the data which powers this generator!
 </p>
+
+<h2>Generate A Graph</h2>
 
 <?php
 if (count($errors) > 0)
@@ -198,8 +204,8 @@ if (count($errors) > 0)
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
 <p>
-<i>Optional: Selecting a level here will allow the tree to follow "kismet" events
-within the specified level.</i>
+<i>Optional: Selecting a level here will allow the tree to follow Kismet sequence
+events within the specified level.</i>
 </p>
 <blockquote>
 <select name="level" id="level">
@@ -222,15 +228,59 @@ foreach ($levels as $game => $level_list)
 ?>
 </select><br/>
 <input type="checkbox" name="follow_kismet" id="follow_kismet">
-<label for="follow_kismet"><i>Allow following Kismets to other sequence classes.</i></label>
+<label for="follow_kismet"><i>Allow following Kismets through class boundaries</i></label>
 </blockquote>
 </form>
+
+<p><span class="bad">Warning:</span> The Kismet graphing abilities seem pretty
+solid to me, but I wouldn't be surprised if there are edge cases I've missed.  Please
+let me know if any graphs error out, or are doing anything weird!</p>
+
+<h2>Option Reference</h2>
+
+<p>
+For the most basic functionality (which is all most people are ever going to
+need), simply paste the BPD name into the main textbox, choose the game, and hit
+"Generate."  As of August 13, 2018, you can also put in a Kismet sequence start
+point to graph those.  For instance, some valid start points:
+</p>
+
+<ul>
+<li><tt>GD_Shields.Skills.Impact_Shield_Skill:BehaviorProviderDefinition_0</tt></li>
+<li><tt>Xmas_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_16</tt></li>
+</ul>
+
+<p>
+The graph should let you know whenever it would "call out" to an external event,
+whether it's to another BPD or a Kismet sequence.  In some cases, it can know the
+BPD name to display, in which case it will show you (see the screenshot below).
+By default, it won't actually "follow" any of these links, though.
+</p>
+
+<p>
+In order to have the graph follow into event links as much as possible (which will
+often be into Kismet sequences), choose a level in which the BPD or Kismet will be
+running.  This way, the grapher can know which Kismets are available to link to.
+</p>
+
+<p>
+Finally, when graphing into Kismets, sometimes the sequence links will take the
+grapher out of the class that it started in.  For instance, the graph of
+<tt>Distillery_Boss.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_LevelLoaded_1</tt>
+starts out in the main class <tt>Distillery_Boss.TheWorld:PersistentLevel.Main_Sequence</tt>.
+So long as Rotgut Distillery is chosen as the level to work in, the tree will end
+up showing that it branches out to other sequences into classes such as
+<tt>Distillery_Mission3.TheWorld:PersistentLevel.Main_Sequence</tt>.  In order to
+actually follow those links, rather than just stopping at the class change, check
+the "Allow following Kismets through class boundaries" checkbox.
+</p>
 
 <h2>Output Reference</h2>
 
 <blockquote>
 
 <img src="impact.png?v=3" alt="Graph of base Amp shield BPD">
+<img src="yeti.png?v=1" alt="Graph of a Kismet sequence from the Christmas Headhunter Pack" style="vertical-align: top;">
 
 <p>
 Green nodes are the initial Events in <tt>EventData2</tt> which kick off
@@ -239,6 +289,12 @@ the BPD trees.  The number in brackets is the index in the
 BehaviorSequence has a name, it will be here.  The Event name itself is
 always shown after a period.  The second index in brackets is the
 index of the event inside the <tt>EventData2</tt> index.
+</p>
+
+<p>
+Blue nodes are Kismet sequence objects, and the darker blue, square-corner
+ones are Kismet sequence events.  The lighter blue nodes are other sequence
+objects.  The event name will be included where relevant.
 </p>
 
 <p>
@@ -278,9 +334,9 @@ the next behavior.
 </p>
 
 <p>
-Links which use a <tt>RemoteCustomEvent</tt> behavior to link to a fresh
-Event will be colored in green, like the Event nodes themselves.  If a
-<tt>RemoteCustomEvent</tt> links to an event name which isn't present in
+Links which refer back to events will be colored in green if it's heading
+towards a BPD Event, or blue if it's heading towards a Kismet sequence event.
+If a <tt>RemoteCustomEvent</tt> links to an event name which isn't present in
 this BPD, the link will be shown in a node which looks a bit like an
 arrow pointing to the right.  Those nodes will be light red for event
 names which appear to be invalid generally, and gold for events which

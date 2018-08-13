@@ -33,6 +33,18 @@ from ftexplorer.data import Data
 from level_sequence_event_names import level_sequence_event_names
 
 ###
+### WARNING: Here there be dragons.
+###
+### This code's gotten quite unweildy, sorry about that.  A lot of stuff is
+### implemented separately in like two or three different places throughout
+### the file.  Rather than refactor everything to use a common codebase, when
+### I implemented the Kismet stuff, I just sort of tacked it on to the
+### existing BPD-processing stuff, as its own separate thing.  It's... rather
+### hokey.  Still, things seem to work pretty well, at least.  Anyway, beware.
+### The code used to be pretty reasonable -- not so much, anymore.
+###
+
+###
 ### Color/shape information
 ###
 
@@ -831,7 +843,7 @@ if __name__ == '__main__':
 
                     # aaaand generate.
                     try:
-                        generate_dot(node, bpd_name, {})
+                        generate_dot(node, bpd_name, {}, False)
                         generated += 1
                     except Exception as e:
                         print('', file=sys.stderr)
