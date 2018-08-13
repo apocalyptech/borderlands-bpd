@@ -136,7 +136,7 @@ class KismetNode(object):
                         len(behavior_types)-1,
                         )
 
-            # TODO: Read in the behavior data as well
+            # Read in the behavior data
             for (btype, bname) in zip(behavior_types, self.behaviors):
                 bpd_name = None
                 event_name = None
