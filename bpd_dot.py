@@ -37,6 +37,7 @@ from level_sequence_event_names import level_sequence_event_names
 ###
 
 style_default = 'shape=box style=rounded'
+style_kismet_default = 'shape=box style="rounded,filled" fillcolor=cadetblue1'
 style_broken_cold = 'style=filled fillcolor=red'
 style_event = 'style=filled fillcolor=chartreuse2'
 style_event_edge = 'color=chartreuse2'
@@ -205,10 +206,11 @@ class KismetNode(object):
 
     def get_style(self):
         global style_seq_event
+        global style_kismet_default
         if self.event_name:
             return '{} '.format(style_seq_event)
         else:
-            return ''
+            return '{} '.format(style_kismet_default)
 
 class Kismets(object):
     """
@@ -289,12 +291,13 @@ class Kismets(object):
                     if (self.from_bpd and
                             explicit_bpd_name.lower().startswith(self.from_bpd.lower())):
                         if explicit_bpd_event.lower() in self.bpd_event_map:
-                            self.links.append((
-                                node.node_id,
-                                self.bpd_event_map[explicit_bpd_event.lower()],
-                                style_event_edge,
-                                None
-                                ))
+                            for explicit_inner in self.bpd_event_map[explicit_bpd_event.lower()]:
+                                self.links.append((
+                                    node.node_id,
+                                    explicit_inner,
+                                    style_event_edge,
+                                    None
+                                    ))
                             found_link = True
                     if not found_link:
                         if explicit_bpd_name.lower() not in self.unknown_events:
