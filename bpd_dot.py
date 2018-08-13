@@ -71,7 +71,8 @@ class KismetNode(object):
     A single Kismet sequence object
     """
 
-    def __init__(self, name, node_id, data, prev_node):
+    def __init__(self, name, node_id, data, prev_node, from_bpd, bpd_event_map):
+        global get_rce_bpd
         self.name = name
         self.node_id = node_id
         (self.base_class, self.short_name) = name.rsplit('.', 1)
@@ -93,9 +94,13 @@ class KismetNode(object):
                 self.event_link = self.struct['EventName']
         self.behaviors = None
         self.behavior_type_report = None
+        self.to_behaviors = None
+        self.to_events = None
         if 'Behaviors' in self.struct:
             self.behaviors = []
             behavior_types = []
+            self.to_behaviors = []
+            self.to_events = []
             for behavior_full in self.struct['Behaviors']:
                 if behavior_full and behavior_full != '':
                     (behavior_type, behavior_name, junk2) = behavior_full.split("'")
@@ -111,8 +116,13 @@ class KismetNode(object):
 
             # TODO: Read in the behavior data as well
             for (btype, bname) in zip(behavior_types, self.behaviors):
+                bpd_name = None
+                event_name = None
                 if btype == 'Behavior_RemoteCustomEvent':
-                    pass
+                    behavior = data.get_struct_by_full_object(bname)
+                    bpd_name = get_rce_bpd(behavior)
+                    event_name = behavior['CustomEventName']
+                    self.to_behaviors.append((bpd_name, event_name))
                 elif btype == 'Behavior_RemoteEvent' or btype == 'Behavior_CustomEvent':
                     pass
         
@@ -223,7 +233,8 @@ class Kismets(object):
         else:
             node = KismetNode(node_name,
                     'kismet_node_{}'.format(len(self.nodes)),
-                    self.data, prev_node)
+                    self.data, prev_node,
+                    self.from_bpd, self.bpd_event_map)
             self.nodes[node_name] = node
 
             # Follow output links
@@ -392,7 +403,7 @@ def get_rce_bpd(rce):
             string_build.append('.{}'.format(element))
     return ''.join(string_build)
 
-def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
+def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=None):
     """
     Outputs a graphviz dot file from the given node
     """
@@ -400,11 +411,20 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
     bpd = node.get_structure()
     cold_followed = set()
     event_map = {}
+    label_suffix_list = []
+    if level_name and level_name != '':
+        label_suffix_list.append('in {}'.format(level_name))
+    if kismet_follow_class:
+        label_suffix_list.append('following kismets fully')
+    if len(label_suffix_list) > 0:
+        label_suffix = '<br/>{}'.format(', '.join(label_suffix_list))
+    else:
+        label_suffix = ''
     print('digraph bpd {')
     print('')
     print('  labelloc = "t";')
     print('  fontsize = 25;')
-    print('  label = <{}>;'.format(bpd_name))
+    print('  label = <{}{}>;'.format(bpd_name, label_suffix))
     print('  node [{}];'.format(style_default))
     print('')
 
@@ -783,4 +803,14 @@ if __name__ == '__main__':
             print('ERROR: {} could not be loaded: {}'.format(bpd_name, str(e)))
             sys.exit(2)
 
-        generate_dot(node, bpd_name, seq_event_map, args.follow)
+        # Get a label to use for the level name
+        english_level_label = None
+        if args.level and args.level != '':
+            english_level_name = data.get_level_name(args.level)
+            if english_level_name:
+                english_level_label = '{} ({})'.format(english_level_name, args.level)
+            else:
+                english_level_label = args.level
+
+        # This is silly, should have a dict to look this up
+        generate_dot(node, bpd_name, seq_event_map, args.follow, level_name=english_level_label)
