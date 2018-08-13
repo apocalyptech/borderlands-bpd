@@ -159,7 +159,13 @@ class KismetNode(object):
             label_list.append('Event "{}"'.format(self.event_name))
         if self.behavior_type_report:
             label_list.append('({})'.format(self.behavior_type_report))
-        # TODO: put in variables, etc, here?
+        # TODO: I think I probably want to handle variables as if they
+        # were nodes.  Anyway, the inline variable stuff looks too messy,
+        # so commenting for now.
+        #for varname in self.variable_names:
+        #    if varname.lower().startswith(self.base_class.lower()):
+        #        varname = varname[len(self.base_class)+1:]
+        #    label_list.append('Var: {}'.format(varname))
         return '<br/>'.join(label_list)
 
     def get_style(self):
