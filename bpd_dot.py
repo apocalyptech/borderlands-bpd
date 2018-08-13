@@ -146,7 +146,13 @@ class KismetNode(object):
                     event_name = behavior['CustomEventName']
                     self.to_behaviors.append((bpd_name, event_name))
                 elif btype == 'Behavior_RemoteEvent' or btype == 'Behavior_CustomEvent':
-                    pass
+                    if btype == 'Behavior_RemoteEvent':
+                        varname = 'EventName'
+                    else:
+                        varname = 'CustomEventName'
+                    behavior = data.get_struct_by_full_object(bname)
+                    event_name = behavior[varname]
+                    self.to_events.append(event_name)
         
         # Read out output links (this is our primary treeing method)
         self.output_names = []
@@ -284,6 +290,37 @@ class Kismets(object):
                             None,
                             ))
 
+            # Follow unspecified events (could be to BPD, could be to sequences)
+            if node.to_events:
+                for event_name in node.to_events:
+                    found_link = False
+                    event_name_lower = event_name.lower()
+                    if event_name_lower in self.seq_event_map:
+                        found_link = True
+                        for remote_event_name in self.seq_event_map[event_link_lower]:
+                            self.follow(remote_event_name, node, 0)
+                    if self.from_bpd and event_name_lower in self.bpd_event_map:
+                        found_link = True
+                        for remote_event_name in self.bpd_event_map[event_name_lower]:
+                            self.links.append((
+                                node.node_id,
+                                remote_event_name,
+                                style_event_edge,
+                                None,
+                                ))
+                    if not found_link:
+                        if event_name_lower not in self.unknown_events:
+                            unknown_id = 'unknown_kismet_event_{}'.format(len(self.unknown_events))
+                            unknown_node = KismetUnknownEventNode(unknown_id, event_name)
+                            self.unknown_events[event_name_lower] = unknown_node
+                            self.nodes[unknown_id] = unknown_node
+                        self.links.append((
+                                node.node_id,
+                                self.unknown_events[event_name_lower].node_id,
+                                style_seq_event_edge,
+                                None,
+                                ))
+
             # Follow explicit BPD links
             if node.to_behaviors:
                 for (explicit_bpd_name, explicit_bpd_event) in node.to_behaviors:
@@ -296,7 +333,7 @@ class Kismets(object):
                                     node.node_id,
                                     explicit_inner,
                                     style_event_edge,
-                                    None
+                                    None,
                                     ))
                             found_link = True
                     if not found_link:
