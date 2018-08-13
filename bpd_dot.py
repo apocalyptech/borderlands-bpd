@@ -650,7 +650,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
             styles = []
             if link_style:
                 styles.append(link_style)
-            if link_tail:
+            if link_tail is not None:
                 styles.append('taillabel=<{}>'.format(link_tail))
             if len(styles) > 0:
                 style_str = ' [{}]'.format(' '.join(styles))
