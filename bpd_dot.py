@@ -66,6 +66,27 @@ class KismetUnknownEventNode(object):
     def get_label(self):
         return '{}<br/><i>(Unknown Event,<br/>may call out to other BPD)</i>'.format(self.event_name)
 
+class KismetUnknownExactBPD(object):
+    """
+    Custom object to describe a BPD Event we don't have loaded
+    """
+
+    def __init__(self, node_id, bpd_name, event_name):
+        self.node_id = node_id
+        self.bpd_name = bpd_name
+        self.event_name = event_name
+
+    def get_style(self):
+        global style_event_remote
+        return '{} '.format(style_event_remote)
+
+    def get_label(self):
+        if ':' in self.bpd_name:
+            (first, second) = self.bpd_name.split(':', 1)
+            return '{}:<br/>{}<br/>{}'.format(first, second, self.event_name)
+        else:
+            return '{}<br/>{}'.format(self.bpd_name, self.event_name)
+
 class KismetNode(object):
     """
     A single Kismet sequence object
@@ -225,6 +246,7 @@ class Kismets(object):
         self.follow(node_name, None, 0)
 
     def follow(self, node_name, prev_node, output_idx):
+        global style_event_edge
         global style_seq_event_edge
         if node_name in self.nodes:
             # already-visited nodes *should* trigger a change_point, if we
@@ -258,6 +280,33 @@ class Kismets(object):
                             self.unknown_events[node.event_link.lower()].node_id,
                             style_seq_event_edge,
                             None,
+                            ))
+
+            # Follow explicit BPD links
+            if node.to_behaviors:
+                for (explicit_bpd_name, explicit_bpd_event) in node.to_behaviors:
+                    found_link = False
+                    if (self.from_bpd and
+                            explicit_bpd_name.lower().startswith(self.from_bpd.lower())):
+                        if explicit_bpd_event.lower() in self.bpd_event_map:
+                            self.links.append((
+                                node.node_id,
+                                self.bpd_event_map[explicit_bpd_event.lower()],
+                                style_event_edge,
+                                None
+                                ))
+                            found_link = True
+                    if not found_link:
+                        if explicit_bpd_name.lower() not in self.unknown_events:
+                            unknown_id = 'unknown_kismet_event_{}'.format(len(self.unknown_events))
+                            unknown_node = KismetUnknownExactBPD(unknown_id, explicit_bpd_name, explicit_bpd_event)
+                            self.unknown_events[explicit_bpd_name.lower()] = unknown_node
+                            self.nodes[unknown_id] = unknown_node
+                        self.links.append((
+                            node.node_id,
+                            self.unknown_events[explicit_bpd_name.lower()].node_id,
+                            style_event_edge,
+                            None
                             ))
 
         if prev_node:
@@ -589,7 +638,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
             print('    node [{}];'.format(style_event_remote))
             for (node_id, remote_bpd, event_name) in remote_events:
                 if ':' in remote_bpd:
-                    (first, second) = remote_bpd.split(':', 2)
+                    (first, second) = remote_bpd.split(':', 1)
                     print('    {} [label=<{}:<br/>{}<br/>{}>];'.format(node_id, first, second, event_name))
                 else:
                     print('    {} [label=<{}<br/>{}>];'.format(node_id, remote_bpd, event_name))
@@ -786,14 +835,17 @@ if __name__ == '__main__':
         game = args.game.upper()
         bpd_name = args.bpd
 
+        # Load in our sequence event map, if we can
         seq_event_map = {}
         if args.level and args.level != '':
             if args.level.lower() not in level_sequence_event_names[game]:
                 raise argparse.ArgumentTypeError('Level name {} not found in {}'.format(args.level, game))
             seq_event_map = level_sequence_event_names[game][args.level.lower()]
 
+        # Initialize data
         data = Data(game)
 
+        # Get the actual node
         try:
             node = data.get_node_by_full_object(bpd_name)
             if not node:
