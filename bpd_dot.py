@@ -50,6 +50,22 @@ style_seq_event_edge = 'color=deepskyblue1'
 ### Class for dealing with kismet-style sequence objects.
 ###
 
+class KismetUnknownEventNode(object):
+    """
+    Custom object to describe an event we don't know how to get to
+    """
+
+    def __init__(self, node_id, event_name):
+        self.node_id = node_id
+        self.event_name = event_name
+
+    def get_style(self):
+        global style_event_unknown
+        return '{} '.format(style_event_unknown)
+
+    def get_label(self):
+        return '{}<br/><i>(Unknown Event,<br/>may call out to other BPD)</i>'.format(self.event_name)
+
 class KismetNode(object):
     """
     A single Kismet sequence object
@@ -60,17 +76,21 @@ class KismetNode(object):
         self.node_id = node_id
         (self.base_class, self.short_name) = name.rsplit('.', 1)
         if prev_node:
-            if self.base_class == prev_node.base_class:
+            if self.base_class.lower() == prev_node.base_class.lower():
                 self.change_point = False
             else:
                 self.change_point = True
         else:
             self.change_point = True
         self.struct = data.get_struct_by_full_object(name)
+        self.event_name = None
+        self.event_link = None
         if 'EventName' in self.struct:
-            self.event_name = self.struct['EventName']
-        else:
-            self.event_name = None
+            if (self.short_name.lower().startswith('seqevent_remoteevent') or
+                    self.short_name.lower().startswith('willowseqevent_missionremoteevent')):
+                self.event_name = self.struct['EventName']
+            else:
+                self.event_link = self.struct['EventName']
         self.behaviors = None
         self.behavior_type_report = None
         if 'Behaviors' in self.struct:
@@ -165,6 +185,7 @@ class Kismets(object):
         self.entry_points = []
         self.nodes = {}
         self.links = []
+        self.unknown_events = {}
 
     def add_entry(self, from_id, to_name):
         self.entry_points.append((from_id, to_name))
@@ -189,9 +210,29 @@ class Kismets(object):
                     'kismet_node_{}'.format(len(self.nodes)),
                     self.data, prev_node)
             self.nodes[node_name] = node
+
+            # Follow output links
             if not prev_node or not node.change_point or self.follow_to_new_base:
                 for (idx, output) in enumerate(node.output_names):
                     self.follow(output, node, idx)
+
+            # Follow event links
+            if node.event_link:
+                if node.event_link in self.seq_event_map:
+                    self.follow(self.seq_event_map[node.event_link], node, 0)
+                else:
+                    if node.event_link.lower() not in self.unknown_events:
+                        unknown_id = 'unknown_kismet_event_{}'.format(len(self.unknown_events))
+                        unknown_node = KismetUnknownEventNode(unknown_id, node.event_link)
+                        self.unknown_events[node.event_link.lower()] = unknown_node
+                        self.nodes[unknown_id] = unknown_node
+                    self.links.append((
+                            node.node_id,
+                            self.unknown_events[node.event_link.lower()].node_id,
+                            style_seq_event_edge,
+                            None,
+                            ))
+
         if prev_node:
             if self.nodes[node_name].event_name:
                 style = style_seq_event_edge
@@ -335,7 +376,7 @@ def get_rce_bpd(rce):
             string_build.append('.{}'.format(element))
     return ''.join(string_build)
 
-def generate_dot(node, bpd_name, seq_event_map):
+def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class):
     """
     Outputs a graphviz dot file from the given node
     """
@@ -401,7 +442,8 @@ def generate_dot(node, bpd_name, seq_event_map):
         seq_events = []
         unknown_events = []
         seq_event_links = []
-        kismets = Kismets(data, seq_event_map=seq_event_map, from_bpd=bpd_name)
+        kismets = Kismets(data, seq_event_map=seq_event_map, from_bpd=bpd_name,
+                follow_to_new_base=kismet_follow_class)
         for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
             seq_name = seq['BehaviorSequenceName']
@@ -571,7 +613,8 @@ def generate_dot(node, bpd_name, seq_event_map):
         # Here's our branch if we're just doing a Kismet tree
         is_bpd = False
 
-        kismets = Kismets(data, seq_event_map=seq_event_map)
+        kismets = Kismets(data, seq_event_map=seq_event_map,
+                follow_to_new_base=kismet_follow_class)
         kismets.start_path(bpd_name)
 
     # Kismet stuff gets rendered regardless, since BPDs will be able to
@@ -586,11 +629,16 @@ def generate_dot(node, bpd_name, seq_event_map):
     kismet_links = kismets.get_links()
     if len(kismet_links) > 0:
         for (link_from, link_to, link_style, link_tail) in kismet_links:
+            styles = []
             if link_style:
-                edge_style = '{} '.format(link_style)
+                styles.append(link_style)
+            if link_tail:
+                styles.append('taillabel=<{}>'.format(link_tail))
+            if len(styles) > 0:
+                style_str = ' [{}]'.format(' '.join(styles))
             else:
-                edge_style = ''
-            print('  {} -> {} [{}taillabel=<{}>];'.format(link_from, link_to, edge_style, link_tail))
+                style_str = ''
+            print('  {} -> {}{};'.format(link_from, link_to, style_str))
         print('')
 
     print('')
@@ -681,6 +729,11 @@ if __name__ == '__main__':
             help="Optional level in which the BPD is running, to link in sequence data too",
             )
 
+        parser.add_argument('-f', '--follow',
+            action='store_true',
+            help="Follow Kismet sequences through to other classes",
+            )
+
         parser.add_argument('game',
             choices=['bl2', 'tps'],
             help='Which game to search',
@@ -707,4 +760,4 @@ if __name__ == '__main__':
         if not node:
             sys.exit(1)
 
-        generate_dot(node, bpd_name, seq_event_map)
+        generate_dot(node, bpd_name, seq_event_map, args.follow)

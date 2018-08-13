@@ -45,6 +45,7 @@ if (array_key_exists('action', $_REQUEST))
                 if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
                 {
                     $level = trim($_REQUEST['level']);
+                    $follow_kismet = array_key_exists('follow_kismet', $_REQUEST);
                     if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
 
                         if ($level == '')
@@ -56,6 +57,11 @@ if (array_key_exists('action', $_REQUEST))
                         {
                             $cache_extra = '_' . strtolower($level);
                             $cmd_extra = ' -l ' . $level;
+                            if ($follow_kismet)
+                            {
+                                $cache_extra .= '_follow';
+                                $cmd_extra = ' -f';
+                            }
                         }
                         $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.png';
                         if (!file_exists($cache_filename))
@@ -187,8 +193,11 @@ if (count($errors) > 0)
 <input type="text" name="bpd" id="bpd" size=80>
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
-<br/>
-<i>Optional: Select a level to enable linking through Level Kismet events: </i>
+<p>
+<i>Optional: Selecting a level here will allow the tree to follow "kismet" events
+within the specified level.</i>
+</p>
+<blockquote>
 <select name="level" id="level">
 <?php
 // May as well prepopulate this in case someone's got Javascript disabled
@@ -207,7 +216,10 @@ foreach ($levels as $game => $level_list)
     }
 }
 ?>
-</select>
+</select><br/>
+<input type="checkbox" name="follow_kismet" id="follow_kismet">
+<label for="follow_kismet"><i>Allow following Kismets to other sequence classes.</i></label>
+</blockquote>
 </form>
 
 <h2>Output Reference</h2>
