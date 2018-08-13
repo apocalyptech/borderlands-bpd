@@ -150,6 +150,10 @@ class KismetNode(object):
                         (junk, var_name, junk2) = var.split("'")
                         self.event_names.append(var_name)
 
+    def update_change_point(self, prev_node):
+        if prev_node and self.base_class.lower() != prev_node.base_class.lower():
+            self.change_point = True
+
     def get_label(self):
         label_list = []
         if self.change_point:
@@ -212,7 +216,11 @@ class Kismets(object):
 
     def follow(self, node_name, prev_node, output_idx):
         global style_seq_event_edge
-        if node_name not in self.nodes:
+        if node_name in self.nodes:
+            # already-visited nodes *should* trigger a change_point, if we
+            # happen to come at them from a different angle again
+            self.nodes[node_name].update_change_point(prev_node)
+        else:
             node = KismetNode(node_name,
                     'kismet_node_{}'.format(len(self.nodes)),
                     self.data, prev_node)
@@ -225,8 +233,9 @@ class Kismets(object):
 
             # Follow event links
             if node.event_link:
-                if node.event_link in self.seq_event_map:
-                    self.follow(self.seq_event_map[node.event_link], node, 0)
+                if node.event_link.lower() in self.seq_event_map:
+                    for remote_event_name in self.seq_event_map[node.event_link.lower()]:
+                        self.follow(remote_event_name, node, 0)
                 else:
                     if node.event_link.lower() not in self.unknown_events:
                         unknown_id = 'unknown_kismet_event_{}'.format(len(self.unknown_events))

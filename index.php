@@ -60,7 +60,7 @@ if (array_key_exists('action', $_REQUEST))
                             if ($follow_kismet)
                             {
                                 $cache_extra .= '_follow';
-                                $cmd_extra = ' -f';
+                                $cmd_extra .= ' -f';
                             }
                         }
                         $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.png';
