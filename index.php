@@ -188,7 +188,7 @@ if (count($errors) > 0)
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
 <br/>
-<i>Optional: Select a level to enable linking BPDs through Level Kismets: </i>
+<i>Optional: Select a level to enable linking through Level Kismet events: </i>
 <select name="level" id="level">
 <?php
 // May as well prepopulate this in case someone's got Javascript disabled

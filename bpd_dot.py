@@ -47,6 +47,166 @@ style_event_unknown = 'style=filled fillcolor=deepskyblue1'
 style_seq_event_edge = 'color=deepskyblue1'
 
 ###
+### Class for dealing with kismet-style sequence objects.
+###
+
+class KismetNode(object):
+    """
+    A single Kismet sequence object
+    """
+
+    def __init__(self, name, node_id, data, prev_node):
+        self.name = name
+        self.node_id = node_id
+        (self.base_class, self.short_name) = name.rsplit('.', 1)
+        if prev_node:
+            if self.base_class == prev_node.base_class:
+                self.change_point = False
+            else:
+                self.change_point = True
+        else:
+            self.change_point = True
+        self.struct = data.get_struct_by_full_object(name)
+        if 'EventName' in self.struct:
+            self.event_name = self.struct['EventName']
+        else:
+            self.event_name = None
+        self.behaviors = None
+        self.behavior_type_report = None
+        if 'Behaviors' in self.struct:
+            self.behaviors = []
+            behavior_types = []
+            for behavior_full in self.struct['Behaviors']:
+                if behavior_full and behavior_full != '':
+                    (behavior_type, behavior_name, junk2) = behavior_full.split("'")
+                    self.behaviors.append(behavior_name)
+                    behavior_types.append(behavior_type)
+            if len(behavior_types) == 1:
+                self.behavior_type_report = behavior_types[0]
+            elif len(behavior_types) > 1:
+                self.behavior_type_report = '{} +{} more'.format(
+                        behavior_types[0],
+                        len(behavior_types)-1,
+                        )
+
+            # TODO: Read in the behavior data as well
+            for (btype, bname) in zip(behavior_types, self.behaviors):
+                if btype == 'Behavior_RemoteCustomEvent':
+                    pass
+                elif btype == 'Behavior_RemoteEvent' or btype == 'Behavior_CustomEvent':
+                    pass
+        
+        # Read out output links (this is our primary treeing method)
+        self.output_names = []
+        if 'OutputLinks' in self.struct and self.struct['OutputLinks'] != '':
+            for outputlink in self.struct['OutputLinks']:
+                if 'Links' in outputlink and outputlink['Links'] != '':
+                    for link in outputlink['Links']:
+                        self.output_names.append(Data.get_struct_attr_obj(link, 'LinkedOp'))
+
+        # Read in variables (not doing anything with this yet, but will
+        # hopefully be reporting on them)
+        self.variable_names = []
+        if 'VariableLinks' in self.struct and self.struct['VariableLinks'] != '':
+            for variablelink in self.struct['VariableLinks']:
+                if 'LinkedVariables' in variablelink and variablelink['LinkedVariables'] != '':
+                    linkvars = variablelink['LinkedVariables']
+                    # This processing is due to our data library being a bit stupid about
+                    # lists of things.  Have to split on the comma ourselves here.
+                    for var in linkvars.split(','):
+                        (junk, var_name, junk2) = var.split("'")
+                        self.variable_names.append(var_name)
+
+        # Read in any events which get triggered.  This seems reasonably rare.
+        # TODO: Not sure exactly what happens here; does it just branch off?
+        self.event_names = []
+        if 'EventLinks' in self.struct and self.struct['EventLinks'] != '':
+            for eventlink in self.struct['EventLinks']:
+                if 'LinkedEvents' in eventlink and eventlink['LinkedEvents'] != '':
+                    linkevents = eventlink['LinkedEvents']
+                    # This processing is due to our data library being a bit stupid about
+                    # lists of things.  Have to split on the comma ourselves here.
+                    for var in linkevents.split(','):
+                        (junk, var_name, junk2) = var.split("'")
+                        self.event_names.append(var_name)
+
+    def get_label(self):
+        label_list = []
+        if self.change_point:
+            label_list.append('{}.'.format(self.base_class))
+        label_list.append(self.short_name)
+        if self.event_name:
+            label_list.append('Event "{}"'.format(self.event_name))
+        if self.behavior_type_report:
+            label_list.append('({})'.format(self.behavior_type_report))
+        # TODO: put in variables, etc, here?
+        return '<br/>'.join(label_list)
+
+    def get_style(self):
+        global style_seq_event
+        if self.event_name:
+            return '{} '.format(style_seq_event)
+        else:
+            return ''
+
+class Kismets(object):
+    """
+    It's a bit stupid that these have their own class where nothing else in
+    here does, but that's a side-effect of having this stuff tacked on later,
+    when the rest was just procedural
+    """
+
+    def __init__(self, data, seq_event_map={}, from_bpd=None,
+            follow_to_new_base=False):
+        self.data = data
+        self.seq_event_map = seq_event_map
+        self.from_bpd = from_bpd
+        self.follow_to_new_base = follow_to_new_base
+        self.entry_points = []
+        self.nodes = {}
+        self.links = []
+
+    def add_entry(self, from_id, to_name):
+        self.entry_points.append((from_id, to_name))
+
+    def follow_entries(self):
+        global style_seq_event_edge
+        for (idx, (from_id, entry_name)) in enumerate(self.entry_points):
+            node = self.follow(entry_name, None, idx)
+            if node.event_name:
+                style = style_seq_event_edge
+            else:
+                style = None
+            self.links.append((from_id, node.node_id, style, idx))
+
+    def start_path(self, node_name):
+        self.follow(node_name, None, 0)
+
+    def follow(self, node_name, prev_node, output_idx):
+        global style_seq_event_edge
+        if node_name not in self.nodes:
+            node = KismetNode(node_name,
+                    'kismet_node_{}'.format(len(self.nodes)),
+                    self.data, prev_node)
+            self.nodes[node_name] = node
+            if not prev_node or not node.change_point or self.follow_to_new_base:
+                for (idx, output) in enumerate(node.output_names):
+                    self.follow(output, node, idx)
+        if prev_node:
+            if self.nodes[node_name].event_name:
+                style = style_seq_event_edge
+            else:
+                style = None
+            self.links.append((prev_node.node_id, self.nodes[node_name].node_id, style, output_idx))
+        return self.nodes[node_name]
+
+    def get_nodes(self):
+        return self.nodes.values()
+
+    def get_links(self):
+        return self.links
+
+###
 ### Functions
 ###
 
@@ -191,217 +351,246 @@ def generate_dot(node, bpd_name, seq_event_map):
     print('  node [{}];'.format(style_default))
     print('')
 
-    print('  {')
-    print('    node [{}];'.format(style_event))
-    for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
+    # First bit of processing is just if we've been handed a
+    # BPD.  This used to be our only mode!  Now we support Kismet
+    # stuff, too, though.
+    if 'behaviorproviderdefinition' in bpd_name_lower:
 
-        seq_name = seq['BehaviorSequenceName']
-        event_data = seq['EventData2']
-        behavior_data = seq['BehaviorData2']
-        variable_data = seq['VariableData']
-        cold_data = seq['ConsolidatedOutputLinkData']
-        cvld_data = seq['ConsolidatedVariableLinkData']
-        clv_data = seq['ConsolidatedLinkedVariables']
+        is_bpd = True
 
-        for (event_idx, event) in enumerate(event_data):
-            if event['UserData']['bEnabled'] == 'True':
+        print('  {')
+        print('    node [{}];'.format(style_event))
+        for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
-                var_extra = get_var_extra(event['OutputVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
-                event_name = event['UserData']['EventName'].strip('"')
-                event_name_lower = event_name.lower()
-                event_id = 'event_{}_{}'.format(seq_idx, event_idx)
-                if event_name_lower not in event_map:
-                    event_map[event_name_lower] = []
-                event_map[event_name_lower].append(event_id)
+            seq_name = seq['BehaviorSequenceName']
+            event_data = seq['EventData2']
+            behavior_data = seq['BehaviorData2']
+            variable_data = seq['VariableData']
+            cold_data = seq['ConsolidatedOutputLinkData']
+            cvld_data = seq['ConsolidatedVariableLinkData']
+            clv_data = seq['ConsolidatedLinkedVariables']
 
-                print('    {} [label=<[{}]{}.{}[{}]{}>];'.format(
-                    event_id,
-                    seq_idx,
-                    seq_name.strip('"'),
-                    event_name,
-                    event_idx,
+            for (event_idx, event) in enumerate(event_data):
+                if event['UserData']['bEnabled'] == 'True':
+
+                    var_extra = get_var_extra(event['OutputVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
+                    event_name = event['UserData']['EventName'].strip('"')
+                    event_name_lower = event_name.lower()
+                    event_id = 'event_{}_{}'.format(seq_idx, event_idx)
+                    if event_name_lower not in event_map:
+                        event_map[event_name_lower] = []
+                    event_map[event_name_lower].append(event_id)
+
+                    print('    {} [label=<[{}]{}.{}[{}]{}>];'.format(
+                        event_id,
+                        seq_idx,
+                        seq_name.strip('"'),
+                        event_name,
+                        event_idx,
+                        var_extra,
+                        ))
+
+            print('')
+
+        print('  }')
+        print('')
+
+        event_links = []
+        invalid_events = []
+        remote_events = []
+        seq_events = []
+        unknown_events = []
+        seq_event_links = []
+        kismets = Kismets(data, seq_event_map=seq_event_map, from_bpd=bpd_name)
+        for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
+
+            seq_name = seq['BehaviorSequenceName']
+            event_data = seq['EventData2']
+            behavior_data = seq['BehaviorData2']
+            variable_data = seq['VariableData']
+            cold_data = seq['ConsolidatedOutputLinkData']
+            cvld_data = seq['ConsolidatedVariableLinkData']
+            clv_data = seq['ConsolidatedLinkedVariables']
+
+            for (behavior_idx, behavior) in enumerate(behavior_data):
+                if behavior['Behavior'] != 'None':
+                    (behavior_type, full_behavior_class, junk) = behavior['Behavior'].split("'", 2)
+                    if full_behavior_class.lower().startswith(bpd_name_lower):
+                        behavior_class = full_behavior_class[len(bpd_name_lower)+1:]
+                    else:
+                        behavior_class = full_behavior_class
+                else:
+                    behavior_type = ''
+                    behavior_class = 'None'
+                    full_behavior_class = 'None'
+
+                var_extra = get_var_extra(behavior['LinkedVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
+                behavior_id = 'behavior_{}_{}'.format(seq_idx, behavior_idx)
+
+                print('  {} [label=<[{}] {}{}>];'.format(
+                    behavior_id,
+                    behavior_idx,
+                    behavior_class,
                     var_extra,
                     ))
 
-        print('')
-
-    print('  }')
-    print('')
-
-    event_links = []
-    invalid_events = []
-    remote_events = []
-    seq_events = []
-    unknown_events = []
-    seq_event_links = []
-    seq_startpoints = set()
-    for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
-
-        seq_name = seq['BehaviorSequenceName']
-        event_data = seq['EventData2']
-        behavior_data = seq['BehaviorData2']
-        variable_data = seq['VariableData']
-        cold_data = seq['ConsolidatedOutputLinkData']
-        cvld_data = seq['ConsolidatedVariableLinkData']
-        clv_data = seq['ConsolidatedLinkedVariables']
-
-        for (behavior_idx, behavior) in enumerate(behavior_data):
-            if behavior['Behavior'] != 'None':
-                (behavior_type, full_behavior_class, junk) = behavior['Behavior'].split("'", 2)
-                if full_behavior_class.lower().startswith(bpd_name_lower):
-                    behavior_class = full_behavior_class[len(bpd_name_lower)+1:]
-                else:
-                    behavior_class = full_behavior_class
-            else:
-                behavior_type = ''
-                behavior_class = 'None'
-                full_behavior_class = 'None'
-
-            var_extra = get_var_extra(behavior['LinkedVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
-            behavior_id = 'behavior_{}_{}'.format(seq_idx, behavior_idx)
-
-            print('  {} [label=<[{}] {}{}>];'.format(
-                behavior_id,
-                behavior_idx,
-                behavior_class,
-                var_extra,
-                ))
-
-            # We can draw some more links if we're a remotecustomevent
-            if behavior_type == 'Behavior_RemoteCustomEvent':
-                rce = data.get_struct_by_full_object(full_behavior_class)
-                if rce:
-                    rce_bpd = get_rce_bpd(rce)
-                    event_name = rce['CustomEventName']
-                    if rce_bpd.lower() == bpd_name_lower:
-                        if event_name.lower() in event_map:
-                            for event_id in event_map[event_name.lower()]:
-                                event_links.append((behavior_id, event_id))
+                # We can draw some more links if we're a remotecustomevent
+                if behavior_type == 'Behavior_RemoteCustomEvent':
+                    rce = data.get_struct_by_full_object(full_behavior_class)
+                    if rce:
+                        rce_bpd = get_rce_bpd(rce)
+                        event_name = rce['CustomEventName']
+                        if rce_bpd.lower() == bpd_name_lower:
+                            if event_name.lower() in event_map:
+                                for event_id in event_map[event_name.lower()]:
+                                    event_links.append((behavior_id, event_id))
+                            else:
+                                invalid_event_name_id = 'invalid_event_{}'.format(len(invalid_events))
+                                invalid_events.append((invalid_event_name_id, event_name))
+                                event_links.append((behavior_id, invalid_event_name_id))
                         else:
-                            invalid_event_name_id = 'invalid_event_{}'.format(len(invalid_events))
-                            invalid_events.append((invalid_event_name_id, event_name))
-                            event_links.append((behavior_id, invalid_event_name_id))
+                            really_remote_id = 'really_remote_id_{}'.format(len(remote_events))
+                            remote_events.append((really_remote_id, rce_bpd, event_name))
+                            event_links.append((behavior_id, really_remote_id))
+
+                # Handle CustomEvents and RemoteEvents.  Functionally these appear to be nearly
+                # identical, as far as BL2+TPS's datasets are concerned.  RemoteEvents in our
+                # datasets seem to only ever link to seqvar event names, and don't seem to ever
+                # link back to BPD event names, whereas CustomEvents can.  Contrariwise,
+                # CustomEvents nearly always seem to link to the same BPD or to other BPDs, and
+                # rarely to seqvar event names (though it does seem to do that sometimes).
+                # Ayway, we may as well just check for both.  Note that currently we don't
+                # handle linking to remote BPDs, but if we have a level specified, we may be
+                # able to follow into seqvar events.
+                elif behavior_type == 'Behavior_CustomEvent' or behavior_type=='Behavior_RemoteEvent':
+                    if behavior_type == 'Behavior_CustomEvent':
+                        attr_name = 'CustomEventName'
                     else:
-                        really_remote_id = 'really_remote_id_{}'.format(len(remote_events))
-                        remote_events.append((really_remote_id, rce_bpd, event_name))
-                        event_links.append((behavior_id, really_remote_id))
+                        attr_name = 'EventName'
+                    rce = data.get_struct_by_full_object(full_behavior_class)
+                    if rce:
+                        event_name = rce[attr_name]
+                        event_name_lower = event_name.lower()
+                        got_a_link = False
+                        # First check for any links within the same BPD
+                        if event_name_lower in event_map:
+                            got_a_link = True
+                            for event_id in event_map[event_name_lower]:
+                                event_links.append((behavior_id, event_id))
+                        # Now for any links outside (will probably never happen)
+                        if event_name_lower in seq_event_map:
+                            got_a_link = True
+                            for seq_obj in seq_event_map[event_name_lower]:
+                                #seq_id = 'seq_id_{}'.format(len(seq_events))
+                                #seq_events.append((seq_id, seq_obj))
+                                #seq_event_links.append((behavior_id, seq_id))
+                                kismets.add_entry(behavior_id, seq_obj)
+                        # If we haven't found any links, put the event name out there,
+                        # at least.
+                        if not got_a_link:
+                            unknown_event_id = 'unknown_event_id_{}'.format(len(unknown_events))
+                            unknown_events.append((unknown_event_id, event_name))
+                            seq_event_links.append((behavior_id, unknown_event_id))
 
-            # Handle CustomEvents and RemoteEvents.  Functionally these appear to be nearly
-            # identical, as far as BL2+TPS's datasets are concerned.  RemoteEvents in our
-            # datasets seem to only ever link to seqvar event names, and don't seem to ever
-            # link back to BPD event names, whereas CustomEvents can.  Contrariwise,
-            # CustomEvents nearly always seem to link to the same BPD or to other BPDs, and
-            # rarely to seqvar event names (though it does seem to do that sometimes).
-            # Ayway, we may as well just check for both.  Note that currently we don't
-            # handle linking to remote BPDs, but if we have a level specified, we may be
-            # able to follow into seqvar events.
-            elif behavior_type == 'Behavior_CustomEvent' or behavior_type=='Behavior_RemoteEvent':
-                if behavior_type == 'Behavior_CustomEvent':
-                    attr_name = 'CustomEventName'
+            print('')
+
+        # Loop through Kismet sequence data, if we've colleceted any
+        kismets.follow_entries()
+
+        if len(invalid_events) > 0:
+            print('  {')
+            print('    node [{}];'.format(style_event_invalid))
+            for (node_id, event_name) in invalid_events:
+                print('    {} [label=<{}<br/>(possibly invalid?)>];'.format(node_id, event_name))
+            print('  }')
+            print('')
+
+        if len(remote_events) > 0:
+            print('  {')
+            print('    node [{}];'.format(style_event_remote))
+            for (node_id, remote_bpd, event_name) in remote_events:
+                if ':' in remote_bpd:
+                    (first, second) = remote_bpd.split(':', 2)
+                    print('    {} [label=<{}:<br/>{}<br/>{}>];'.format(node_id, first, second, event_name))
                 else:
-                    attr_name = 'EventName'
-                rce = data.get_struct_by_full_object(full_behavior_class)
-                if rce:
-                    event_name = rce[attr_name]
-                    event_name_lower = event_name.lower()
-                    got_a_link = False
-                    # First check for any links within the same BPD
-                    if event_name_lower in event_map:
-                        got_a_link = True
-                        for event_id in event_map[event_name_lower]:
-                            event_links.append((behavior_id, event_id))
-                    # Now for any links outside (will probably never happen)
-                    if event_name_lower in seq_event_map:
-                        got_a_link = True
-                        for seq_obj in seq_event_map[event_name_lower]:
-                            seq_id = 'seq_id_{}'.format(len(seq_events))
-                            seq_events.append((seq_id, seq_obj))
-                            seq_event_links.append((behavior_id, seq_id))
-                            seq_startpoints.add(seq_obj)
-                    # If we haven't found any links, put the event name out there,
-                    # at least.
-                    if not got_a_link:
-                        unknown_event_id = 'unknown_event_id_{}'.format(len(unknown_events))
-                        unknown_events.append((unknown_event_id, event_name))
-                        seq_event_links.append((behavior_id, unknown_event_id))
+                    print('    {} [label=<{}<br/>{}>];'.format(node_id, remote_bpd, event_name))
+            print('  }')
+            print('')
 
+        if len(unknown_events) > 0:
+            print('  {')
+            print('    node [{}];'.format(style_event_unknown))
+            for (node_id, event_name) in unknown_events:
+                if len(seq_event_map) == 0:
+                    extra_label = ',<br/>or to an unknown SeqEvent'
+                else:
+                    extra_label = ''
+                print('    {} [label=<{}<br/><i>(Unknown Event,<br/>may call to other BPD{})</i>>];'.format(node_id, event_name, extra_label))
+            print('  }')
+            print('')
+
+        if len(event_links) > 0:
+            print('  {')
+            print('    edge [{}];'.format(style_event_edge))
+            for (link_from, link_to) in event_links:
+                print('    {} -> {};'.format(link_from, link_to))
+            print('  }')
+            print('')
+
+        if len(seq_event_links) > 0:
+            print('  {')
+            print('    edge [{}];'.format(style_seq_event_edge))
+            for (link_from, link_to) in seq_event_links:
+                print('    {} -> {};'.format(link_from, link_to))
+            print('  }')
+            print('')
+
+        for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
+
+            seq_name = seq['BehaviorSequenceName']
+            event_data = seq['EventData2']
+            behavior_data = seq['BehaviorData2']
+            variable_data = seq['VariableData']
+            cold_data = seq['ConsolidatedOutputLinkData']
+            cvld_data = seq['ConsolidatedVariableLinkData']
+            clv_data = seq['ConsolidatedLinkedVariables']
+
+            for (event_idx, event) in enumerate(event_data):
+                if event['UserData']['bEnabled'] == 'True':
+                    follow(event['OutputLinks']['ArrayIndexAndLength'],
+                            cold_data,
+                            behavior_data,
+                            'event_{}_{}'.format(seq_idx, event_idx),
+                            seq_idx,
+                            cold_followed)
+
+            print('')
+
+    else:
+
+        # Here's our branch if we're just doing a Kismet tree
+        is_bpd = False
+
+        kismets = Kismets(data, seq_event_map=seq_event_map)
+        kismets.start_path(bpd_name)
+
+    # Kismet stuff gets rendered regardless, since BPDs will be able to
+    # recurse into them.
+
+    kismet_nodes = kismets.get_nodes()
+    if len(kismet_nodes) > 0:
+        for node in kismet_nodes:
+            print('  {} [{}label=<{}>];'.format(node.node_id, node.get_style(), node.get_label()))
         print('')
 
-    if len(invalid_events) > 0:
-        print('  {')
-        print('    node [{}];'.format(style_event_invalid))
-        for (node_id, event_name) in invalid_events:
-            print('    {} [label=<{}<br/>(possibly invalid?)>];'.format(node_id, event_name))
-        print('  }')
-        print('')
-
-    if len(remote_events) > 0:
-        print('  {')
-        print('    node [{}];'.format(style_event_remote))
-        for (node_id, remote_bpd, event_name) in remote_events:
-            if ':' in remote_bpd:
-                (first, second) = remote_bpd.split(':', 2)
-                print('    {} [label=<{}:<br/>{}<br/>{}>];'.format(node_id, first, second, event_name))
+    kismet_links = kismets.get_links()
+    if len(kismet_links) > 0:
+        for (link_from, link_to, link_style, link_tail) in kismet_links:
+            if link_style:
+                edge_style = '{} '.format(link_style)
             else:
-                print('    {} [label=<{}<br/>{}>];'.format(node_id, remote_bpd, event_name))
-        print('  }')
-        print('')
-
-    if len(seq_events) > 0:
-        print('  {')
-        print('    node [{}];'.format(style_seq_event))
-        for (node_id, seq_name) in seq_events:
-            print('    {} [label=<{}>];'.format(node_id, seq_name))
-        print('  }')
-        print('')
-
-    if len(unknown_events) > 0:
-        print('  {')
-        print('    node [{}];'.format(style_event_unknown))
-        for (node_id, event_name) in unknown_events:
-            if len(seq_event_map) == 0:
-                extra_label = ',<br/>or to an unknown SeqEvent'
-            else:
-                extra_label = ''
-            print('    {} [label=<{}<br/><i>(Unknown Event,<br/>may call to other BPD{})</i>>];'.format(node_id, event_name, extra_label))
-        print('  }')
-        print('')
-
-    if len(event_links) > 0:
-        print('  {')
-        print('    edge [{}];'.format(style_event_edge))
-        for (link_from, link_to) in event_links:
-            print('    {} -> {};'.format(link_from, link_to))
-        print('  }')
-        print('')
-
-    if len(seq_event_links) > 0:
-        print('  {')
-        print('    edge [{}];'.format(style_seq_event_edge))
-        for (link_from, link_to) in seq_event_links:
-            print('    {} -> {};'.format(link_from, link_to))
-        print('  }')
-        print('')
-
-    for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
-
-        seq_name = seq['BehaviorSequenceName']
-        event_data = seq['EventData2']
-        behavior_data = seq['BehaviorData2']
-        variable_data = seq['VariableData']
-        cold_data = seq['ConsolidatedOutputLinkData']
-        cvld_data = seq['ConsolidatedVariableLinkData']
-        clv_data = seq['ConsolidatedLinkedVariables']
-
-        for (event_idx, event) in enumerate(event_data):
-            if event['UserData']['bEnabled'] == 'True':
-                follow(event['OutputLinks']['ArrayIndexAndLength'],
-                        cold_data,
-                        behavior_data,
-                        'event_{}_{}'.format(seq_idx, event_idx),
-                        seq_idx,
-                        cold_followed)
-
+                edge_style = ''
+            print('  {} -> {} [{}taillabel=<{}>];'.format(link_from, link_to, edge_style, link_tail))
         print('')
 
     print('')
