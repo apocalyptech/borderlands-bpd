@@ -32,6 +32,19 @@ require_once('levels.php');
 
 $errors = array();
 $game = 'bl2';
+
+// I should really stop nesting gigantic `if` statements.  That stops... NOW.
+$filetype = 'png';
+if (array_key_exists('filetype', $_REQUEST))
+{
+    if ($_REQUEST['filetype'] == 'svg')
+    {
+        $filetype = 'svg';
+    }
+}
+$follow_kismet = array_key_exists('follow_kismet', $_REQUEST);
+
+// Now back to our historically-deep big ol' gigantic `if` statements.
 if (array_key_exists('action', $_REQUEST))
 {
     if ($_REQUEST['action'] == 'generate')
@@ -45,7 +58,6 @@ if (array_key_exists('action', $_REQUEST))
                 if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
                 {
                     $level = trim($_REQUEST['level']);
-                    $follow_kismet = array_key_exists('follow_kismet', $_REQUEST);
                     if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
 
                         if ($level == '')
@@ -63,7 +75,7 @@ if (array_key_exists('action', $_REQUEST))
                                 $cmd_extra .= ' -f';
                             }
                         }
-                        $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.png';
+                        $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.' . $filetype;
                         if (!file_exists($cache_filename))
                         {
                             $output = array();
@@ -77,7 +89,7 @@ if (array_key_exists('action', $_REQUEST))
                                    2 => array("pipe", "w")
                                 );
                                 $pipes = array();
-                                $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -Tpng', $descriptors, $pipes);
+                                $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -T' . $filetype, $descriptors, $pipes);
 
                                 if (is_resource($process))
                                 {
@@ -115,8 +127,16 @@ if (array_key_exists('action', $_REQUEST))
                         }
                         if (file_exists($cache_filename))
                         {
-                            header('Content-Type: image/png');
-                            header('Content-Disposition: attachment; filename="bpd_image.png"');
+                            if ($filetype == 'svg')
+                            {
+                                header('Content-Type: image/svg+xml');
+                                header('Content-Disposition: attachment; filename="bpd_graph.svg"');
+                            }
+                            else
+                            {
+                                header('Content-Type: image/png');
+                                header('Content-Disposition: attachment; filename="bpd_image.png"');
+                            }
                             readfile($cache_filename);
                             exit();
                         }
@@ -170,6 +190,10 @@ $page->add_changelog('August 13, 2018', array(
     'Allow graphing of Kismet sequences as well',
     'BPDs can link to Kismet sequence events, if a level is chosen to operate in',
 ));
+$page->add_changelog('August 16, 2018', array(
+    'Added ability to graph entire Kismet sequence, rather than having to choose a start point',
+    'Added PNG/SVG output dropdown',
+));
 $page->apoc_header();
 ?>
 
@@ -195,12 +219,19 @@ if (count($errors) > 0)
 }
 ?>
 
+<blockquote>
 <form action="index.php" method="get">
+<p><strong>Note:</strong> If you are experiencing problems with very wide PNG graphs being compressed
+down into illegibility, you'll have to choose SVG output for now, instead.</p>
 <select name="game" id="game" onChange="populateLevelList();">
 <option value="bl2"<?php if ($game == 'bl2') { echo ' selected'; } ?>>Borderlands 2</option>
 <option value="tps"<?php if ($game == 'tps') { echo ' selected'; } ?>>The Pre-Sequel</option>
 </select>
-<input type="text" name="bpd" id="bpd" size=80>
+<input type="text" name="bpd" id="bpd" size="70">
+<select name="filetype" id="filetype">
+<option value="png"<?php if ($filetype == 'png') { echo ' selected'; }?>>PNG</option>
+<option value="svg"<?php if ($filetype == 'svg') { echo ' selected'; }?>>SVG</option>
+</select>
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
 <p>
@@ -231,6 +262,7 @@ foreach ($levels as $game => $level_list)
 <label for="follow_kismet"><i>Allow following Kismets through class boundaries</i></label>
 </blockquote>
 </form>
+</blockquote>
 
 <p><span class="bad">Warning:</span> The Kismet graphing abilities seem pretty
 solid to me, but I wouldn't be surprised if there are edge cases I've missed.  Please
@@ -359,5 +391,13 @@ it ever go dark, having mirrors is always nice.
 </p>
 
 </blockquote>
+
+<h2>TODO</h2>
+
+<ul>
+<li>Kismet Sequence objects should be able to autodetect what level they're in.</li>
+<li>Would be really nice to figure out a way to get graphs to scrunch down to be
+    more square, rather than being so wide a lot of the time.</li>
+</ul>
 
 <? $page->apoc_footer(); ?>

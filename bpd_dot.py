@@ -375,6 +375,21 @@ class Kismets(object):
     def get_links(self):
         return self.links
 
+    def prune_unlinked(self):
+        """
+        Gets rid of nodes which don't participate in any links
+        """
+        linked_ids = set()
+        for (link_from, link_to, link_style, link_tail) in self.links:
+            linked_ids.add(link_from)
+            linked_ids.add(link_to)
+        nodes_to_delete = []
+        for name, node in self.nodes.items():
+            if node.node_id not in linked_ids:
+                nodes_to_delete.append(name)
+        for name in nodes_to_delete:
+            del self.nodes[name]
+
 ###
 ### Functions
 ###
@@ -751,10 +766,27 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
         # Here's our branch if we're just doing a Kismet tree
         is_bpd = False
 
+        # Set up a Kismets object, no matter what we do
         kismets = Kismets(data, bpd_event_map=event_map,
                 seq_event_map=seq_event_map,
                 follow_to_new_base=kismet_follow_class)
-        kismets.start_path(bpd_name)
+
+        # Check to see if we've been passed a "bare" sequence object
+        root_node = data.get_node_by_full_object(bpd_name)
+        root_struct = root_node.get_structure()
+        if 'SequenceObjects' in root_struct:
+            for child_name, child in root_node.children.items():
+                full_child_name = '{}.{}'.format(bpd_name, child_name)
+                if full_child_name not in kismets.nodes:
+                    child_struct = child.get_structure()
+                    # This check is here to skip things which aren't SequenceOp objects
+                    if 'bIsCurrentDebuggerOp' in child_struct:
+                        kismets.start_path(full_child_name)
+            kismets.prune_unlinked()
+        else:
+            # Okay, we just (presumably) got an individual Sequence item.
+            # Recurse into it and be done!
+            kismets.start_path(bpd_name)
 
     # Kismet stuff gets rendered regardless, since BPDs will be able to
     # recurse into them.
