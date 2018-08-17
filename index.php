@@ -199,9 +199,10 @@ $page->add_changelog('August 16, 2018', array(
     'Added ability to graph entire Kismet sequence, rather than having to choose a start point',
     'Added PNG/SVG output dropdown',
 ));
-$page->add_changelog('unreleased', array(
+$page->add_changelog('August 17, 2018', array(
     'Allow fully-qualified objects to be passed in as name (with object type and quotes)',
     'Show linked kismet variables as separate nodes',
+    'Fix error on full-kismet graphs where nodes could be drawn twice',
 ));
 $page->apoc_header();
 ?>
@@ -408,8 +409,8 @@ it ever go dark, having mirrors is always nice.
 <li>Would be really nice to figure out a way to get graphs to scrunch down to be
     more square, rather than being so wide a lot of the time.</li>
 <li>Search/Highlight functionality</li>
-<li>When graphing whole Kismet sequences, the class-barrier class labels are showing
-    up with lowercased final parts.</li>
+<li>When graphing whole Kismet sequences, nodes will over-report their full class name
+    (should only happen when it changes)</li>
 </ul>
 
 <? $page->apoc_footer(); ?>

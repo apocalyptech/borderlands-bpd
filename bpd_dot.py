@@ -826,7 +826,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
         root_struct = root_node.get_structure()
         if 'SequenceObjects' in root_struct:
             for child_name, child in root_node.children.items():
-                full_child_name = '{}.{}'.format(bpd_name, child_name)
+                full_child_name = '{}.{}'.format(bpd_name, child.name)
                 if full_child_name not in kismets.nodes:
                     child_struct = child.get_structure()
                     # This check is here to skip things which aren't SequenceOp objects
