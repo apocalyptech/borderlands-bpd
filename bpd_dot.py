@@ -245,10 +245,12 @@ class KismetVarNode(KismetBaseRealNode):
     def __init__(self, name, node_id, data, prev_node):
         super().__init__(name, node_id, prev_node)
         self.extra = None
-        if 'SeqVar_Object' in name:
+        if 'seqvar_object' in name.lower():
             self.struct = data.get_struct_by_full_object(name)
             if 'ObjValue' in self.struct and self.struct['ObjValue'] != '':
                 self.extra = Data.get_struct_attr_obj(self.struct, 'ObjValue')
+            if not self.extra:
+                self.extra = 'no object specified'
 
     def get_style(self):
         global style_seq_var
