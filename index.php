@@ -411,6 +411,8 @@ it ever go dark, having mirrors is always nice.
 <li>Search/Highlight functionality</li>
 <li>When graphing whole Kismet sequences, nodes will over-report their full class name
     (should only happen when it changes)</li>
+<li>Figure out other useful attributes to display in the nodes themselves, based on
+    node type (mostly just for Kismets)</li>
 </ul>
 
 <? $page->apoc_footer(); ?>
