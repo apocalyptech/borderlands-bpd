@@ -135,12 +135,12 @@ if (array_key_exists('action', $_REQUEST))
                             if ($filetype == 'svg')
                             {
                                 header('Content-Type: image/svg+xml');
-                                header('Content-Disposition: attachment; filename="bpd_graph.svg"');
+                                //header('Content-Disposition: attachment; filename="bpd_graph.svg"');
                             }
                             else
                             {
                                 header('Content-Type: image/png');
-                                header('Content-Disposition: attachment; filename="bpd_image.png"');
+                                //header('Content-Disposition: attachment; filename="bpd_image.png"');
                             }
                             readfile($cache_filename);
                             exit();
@@ -418,8 +418,6 @@ it ever go dark, having mirrors is always nice.
     <li>Default to SVG?  PNG is a bit nicer for zooming, but SVG is very handy for
         selecting text...</li>
     <li>Checkbox to draw Kismet variables, rather than always-on?</li>
-    <li>Don't do an "attachment" redirect, maybe?  Just let it go straight to browser?
-        In practice I nearly always just keep it in-browser anyway.</li>
 </li>
 </ul>
 
