@@ -413,6 +413,14 @@ it ever go dark, having mirrors is always nice.
     (should only happen when it changes)</li>
 <li>Figure out other useful attributes to display in the nodes themselves, based on
     node type (mostly just for Kismets)</li>
+<li>Some possibilities to consider:
+    <ul>
+    <li>Default to SVG?  PNG is a bit nicer for zooming, but SVG is very handy for
+        selecting text...</li>
+    <li>Checkbox to draw Kismet variables, rather than always-on?</li>
+    <li>Don't do an "attachment" redirect, maybe?  Just let it go straight to browser?
+        In practice I nearly always just keep it in-browser anyway.</li>
+</li>
 </ul>
 
 <? $page->apoc_footer(); ?>
