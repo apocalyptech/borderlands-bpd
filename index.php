@@ -398,6 +398,9 @@ it ever go dark, having mirrors is always nice.
 <li>Kismet Sequence objects should be able to autodetect what level they're in.</li>
 <li>Would be really nice to figure out a way to get graphs to scrunch down to be
     more square, rather than being so wide a lot of the time.</li>
+<li>Search/Highlight functionality</li>
+<li>When graphing whole Kismet sequences, the class-barrier class labels are showing
+    up with lowercased final parts.</li>
 </ul>
 
 <? $page->apoc_footer(); ?>
