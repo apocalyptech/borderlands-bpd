@@ -201,6 +201,7 @@ $page->add_changelog('August 16, 2018', array(
 ));
 $page->add_changelog('unreleased', array(
     'Allow fully-qualified objects to be passed in as name (with object type and quotes)',
+    'Show linked kismet variables as separate nodes',
 ));
 $page->apoc_header();
 ?>

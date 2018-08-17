@@ -58,10 +58,37 @@ style_event_remote = 'style=filled fillcolor=gold1 shape=cds margin=0.15'
 style_seq_event = 'style=filled fillcolor=deepskyblue1'
 style_event_unknown = 'style=filled fillcolor=deepskyblue1'
 style_seq_event_edge = 'color=deepskyblue1'
+style_seq_var = 'shape=ellipse style=filled fillcolor=lemonchiffon1'
+style_seq_var_edge = 'color=lemonchiffon4 style=dashed'
 
 ###
 ### Class for dealing with kismet-style sequence objects.
 ###
+
+class KismetBaseRealNode(object):
+    """
+    Some base node functionality we want in "real" nodes (seqact, seqvar, etc...)
+    """
+
+    def __init__(self, name, node_id, prev_node=None):
+        self.name = name
+        self.node_id = node_id
+        (self.base_class, self.short_name) = name.rsplit('.', 1)
+        if prev_node:
+            if self.base_class.lower() == prev_node.base_class.lower():
+                self.change_point = False
+            else:
+                self.change_point = True
+        else:
+            self.change_point = True
+
+    def update_change_point(self, prev_node):
+        """
+        Given a `prev_node`, mark ourselves as a "change point" if the classes
+        don't actually match
+        """
+        if prev_node and self.base_class.lower() != prev_node.base_class.lower():
+            self.change_point = True
 
 class KismetUnknownEventNode(object):
     """
@@ -100,23 +127,14 @@ class KismetUnknownExactBPD(object):
         else:
             return '{}<br/>{}'.format(self.bpd_name, self.event_name)
 
-class KismetNode(object):
+class KismetNode(KismetBaseRealNode):
     """
     A single Kismet sequence object
     """
 
     def __init__(self, name, node_id, data, prev_node, from_bpd, bpd_event_map):
         global get_rce_bpd
-        self.name = name
-        self.node_id = node_id
-        (self.base_class, self.short_name) = name.rsplit('.', 1)
-        if prev_node:
-            if self.base_class.lower() == prev_node.base_class.lower():
-                self.change_point = False
-            else:
-                self.change_point = True
-        else:
-            self.change_point = True
+        super().__init__(name, node_id, prev_node)
         self.struct = data.get_struct_by_full_object(name)
         self.event_name = None
         self.event_link = None
@@ -200,10 +218,6 @@ class KismetNode(object):
                         (junk, var_name, junk2) = var.split("'")
                         self.event_names.append(var_name)
 
-    def update_change_point(self, prev_node):
-        if prev_node and self.base_class.lower() != prev_node.base_class.lower():
-            self.change_point = True
-
     def get_label(self):
         label_list = []
         if self.change_point:
@@ -213,13 +227,6 @@ class KismetNode(object):
             label_list.append('Event "{}"'.format(self.event_name))
         if self.behavior_type_report:
             label_list.append('({})'.format(self.behavior_type_report))
-        # TODO: I think I probably want to handle variables as if they
-        # were nodes.  Anyway, the inline variable stuff looks too messy,
-        # so commenting for now.
-        #for varname in self.variable_names:
-        #    if varname.lower().startswith(self.base_class.lower()):
-        #        varname = varname[len(self.base_class)+1:]
-        #    label_list.append('Var: {}'.format(varname))
         return '<br/>'.join(label_list)
 
     def get_style(self):
@@ -229,6 +236,32 @@ class KismetNode(object):
             return '{} '.format(style_seq_event)
         else:
             return '{} '.format(style_kismet_default)
+
+class KismetVarNode(KismetBaseRealNode):
+    """
+    A single Kismet variable object
+    """
+
+    def __init__(self, name, node_id, data, prev_node):
+        super().__init__(name, node_id, prev_node)
+        self.extra = None
+        if 'SeqVar_Object' in name:
+            self.struct = data.get_struct_by_full_object(name)
+            if 'ObjValue' in self.struct and self.struct['ObjValue'] != '':
+                self.extra = Data.get_struct_attr_obj(self.struct, 'ObjValue')
+
+    def get_style(self):
+        global style_seq_var
+        return '{} '.format(style_seq_var)
+
+    def get_label(self):
+        lines = []
+        if self.change_point:
+            lines.append('{}.'.format(self.base_class))
+        lines.append(self.short_name)
+        if self.extra:
+            lines.append('({})'.format(self.extra))
+        return '<br/>'.join(lines)
 
 class Kismets(object):
     """
@@ -268,6 +301,7 @@ class Kismets(object):
     def follow(self, node_name, prev_node, output_idx):
         global style_event_edge
         global style_seq_event_edge
+        global style_seq_var_edge
         if node_name in self.nodes:
             # already-visited nodes *should* trigger a change_point, if we
             # happen to come at them from a different angle again
@@ -283,6 +317,20 @@ class Kismets(object):
             if not prev_node or not node.change_point or self.follow_to_new_base:
                 for (idx, output) in enumerate(node.output_names):
                     self.follow(output, node, idx)
+
+            # Follow variables
+            for varname in node.variable_names:
+                if varname in self.nodes:
+                    self.nodes[varname].update_change_point(node)
+                else:
+                    var_id = 'kismet_var_{}'.format(len(self.nodes))
+                    self.nodes[varname] = KismetVarNode(varname, var_id, data, node)
+                self.links.append((
+                    node.node_id,
+                    self.nodes[varname].node_id,
+                    style_seq_var_edge,
+                    None,
+                    ))
 
             # Follow event links
             if node.event_link:
