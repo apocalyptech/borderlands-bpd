@@ -55,6 +55,11 @@ if (array_key_exists('action', $_REQUEST))
         {
             if (strlen($bpd) > 0)
             {
+                // Allow passing in a fully-qualified object name
+                if (preg_match("/^.*'(.*)'$/", $bpd, $matches))
+                {
+                    $bpd = $matches[1];
+                }
                 if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
                 {
                     $level = trim($_REQUEST['level']);
@@ -193,6 +198,9 @@ $page->add_changelog('August 13, 2018', array(
 $page->add_changelog('August 16, 2018', array(
     'Added ability to graph entire Kismet sequence, rather than having to choose a start point',
     'Added PNG/SVG output dropdown',
+));
+$page->add_changelog('unreleased', array(
+    'Allow fully-qualified objects to be passed in as name (with object type and quotes)',
 ));
 $page->apoc_header();
 ?>
