@@ -236,13 +236,18 @@ $page->add_changelog('August 19, 2018', array(
     'Graphs will open in new tab',
     'Option to not show kismet variables',
 ));
+$page->add_changelog('August 20, 2018', array(
+    'Added link to Kismet/BPD Basics Wiki page',
+));
 $page->apoc_header();
 ?>
 
 <p>
 Just a page to generate graphs from Borderlands 2/TPS BPDs and Kismets.  If you
-don't know what a BPD or Kismet is, this isn't for you.  Many thanks to LightChaosman
-for the data which powers this generator!
+don't know what a BPD or Kismet is, this probably isn't for you, but you can
+check out some <a href="https://github.com/BLCM/BLCMods/wiki/Kismet-Sequence-and-BehaviorProviderDefinition-Basics">basic
+information at the BLCMods Wiki</a>.  Many thanks to LightChaosman for the data
+which powers this generator!
 </p>
 
 <h2>Generate A Graph</h2>
