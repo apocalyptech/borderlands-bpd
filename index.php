@@ -207,6 +207,7 @@ $page->add_changelog('August 17, 2018', array(
 $page->add_changelog('unreleased', array(
     'Fixed Kismet sequence over-reporting of full classnames, when graphing entire sequence',
     'Default to SVG output',
+    'Graphs will open in new tab',
 ));
 $page->apoc_header();
 ?>
@@ -234,7 +235,7 @@ if (count($errors) > 0)
 ?>
 
 <blockquote>
-<form action="index.php" method="get">
+<form action="index.php" method="get" target="_blank">
 <p><strong>Note:</strong> PNG graphic output supports a max. width of about 32k pixels.  Graphics
 which would be larger than that will scale down, sometimes into illegibility.  Stick with SVG
 output for extremely large graphs.</p>
