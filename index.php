@@ -204,6 +204,9 @@ $page->add_changelog('August 17, 2018', array(
     'Show linked kismet variables as separate nodes',
     'Fix error on full-kismet graphs where nodes could be drawn twice',
 ));
+$page->add_changelog('unreleased', array(
+    'Fixed Kismet sequence over-reporting of full classnames, when graphing entire sequence',
+));
 $page->apoc_header();
 ?>
 
@@ -409,8 +412,6 @@ it ever go dark, having mirrors is always nice.
 <li>Would be really nice to figure out a way to get graphs to scrunch down to be
     more square, rather than being so wide a lot of the time.</li>
 <li>Search/Highlight functionality</li>
-<li>When graphing whole Kismet sequences, nodes will over-report their full class name
-    (should only happen when it changes)</li>
 <li>Figure out other useful attributes to display in the nodes themselves, based on
     node type (mostly just for Kismets)</li>
 <li>Some possibilities to consider:

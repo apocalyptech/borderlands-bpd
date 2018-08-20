@@ -65,14 +65,28 @@ style_seq_var_edge = 'color=lemonchiffon4 style=dashed'
 ### Class for dealing with kismet-style sequence objects.
 ###
 
-class KismetBaseRealNode(object):
+class KismetBaseNode(object):
+    """
+    Base attributes all nodes should have
+    """
+
+    def __init__(self, node_id):
+        self.node_id = node_id
+
+        # This is populated by the main Kismets class when linking nodes together,
+        # and is only actually used if we need to re-calculate our change points
+        # after loading a full sequence (rather than specifying a start point)
+        self.links_in = set()
+        self.links_out = set()
+
+class KismetBaseRealNode(KismetBaseNode):
     """
     Some base node functionality we want in "real" nodes (seqact, seqvar, etc...)
     """
 
     def __init__(self, name, node_id, prev_node=None):
+        super().__init__(node_id)
         self.name = name
-        self.node_id = node_id
         (self.base_class, self.short_name) = name.rsplit('.', 1)
         if prev_node:
             if self.base_class.lower() == prev_node.base_class.lower():
@@ -90,13 +104,13 @@ class KismetBaseRealNode(object):
         if prev_node and self.base_class.lower() != prev_node.base_class.lower():
             self.change_point = True
 
-class KismetUnknownEventNode(object):
+class KismetUnknownEventNode(KismetBaseNode):
     """
     Custom object to describe an event we don't know how to get to
     """
 
     def __init__(self, node_id, event_name):
-        self.node_id = node_id
+        super().__init__(node_id)
         self.event_name = event_name
 
     def get_style(self):
@@ -106,13 +120,16 @@ class KismetUnknownEventNode(object):
     def get_label(self):
         return '{}<br/><i>(Unknown Event,<br/>may call out to other BPD)</i>'.format(self.event_name)
 
-class KismetUnknownExactBPD(object):
+    def update_change_point(self, prev_node):
+        pass
+
+class KismetUnknownExactBPD(KismetBaseNode):
     """
     Custom object to describe a BPD Event we don't have loaded
     """
 
     def __init__(self, node_id, bpd_name, event_name):
-        self.node_id = node_id
+        super().__init__(node_id)
         self.bpd_name = bpd_name
         self.event_name = event_name
 
@@ -126,6 +143,9 @@ class KismetUnknownExactBPD(object):
             return '{}:<br/>{}<br/>{}'.format(first, second, self.event_name)
         else:
             return '{}<br/>{}'.format(self.bpd_name, self.event_name)
+
+    def update_change_point(self, prev_node):
+        pass
 
 class KismetNode(KismetBaseRealNode):
     """
@@ -318,7 +338,9 @@ class Kismets(object):
             # Follow output links
             if not prev_node or not node.change_point or self.follow_to_new_base:
                 for (idx, output) in enumerate(node.output_names):
-                    self.follow(output, node, idx)
+                    new_node = self.follow(output, node, idx)
+                    node.links_out.add(new_node)
+                    new_node.links_in.add(node)
 
             # Follow variables
             for varname in node.variable_names:
@@ -327,6 +349,8 @@ class Kismets(object):
                 else:
                     var_id = 'kismet_var_{}'.format(len(self.nodes))
                     self.nodes[varname] = KismetVarNode(varname, var_id, data, node)
+                node.links_out.add(self.nodes[varname])
+                self.nodes[varname].links_in.add(node)
                 self.links.append((
                     node.node_id,
                     self.nodes[varname].node_id,
@@ -338,13 +362,16 @@ class Kismets(object):
             if node.event_link:
                 if node.event_link.lower() in self.seq_event_map:
                     for remote_event_name in self.seq_event_map[node.event_link.lower()]:
-                        self.follow(remote_event_name, node, 0)
+                        new_node = self.follow(remote_event_name, node, 0)
+                        node.links_out.add(new_node)
+                        new_node.links_in.add(node)
                 else:
                     if node.event_link.lower() not in self.unknown_events:
                         unknown_id = 'unknown_kismet_event_{}'.format(len(self.unknown_events))
                         unknown_node = KismetUnknownEventNode(unknown_id, node.event_link)
                         self.unknown_events[node.event_link.lower()] = unknown_node
                         self.nodes[unknown_id] = unknown_node
+                    # Not adding to links_in/links_out here
                     self.links.append((
                             node.node_id,
                             self.unknown_events[node.event_link.lower()].node_id,
@@ -360,10 +387,13 @@ class Kismets(object):
                     if event_name_lower in self.seq_event_map:
                         found_link = True
                         for remote_event_name in self.seq_event_map[event_link_lower]:
-                            self.follow(remote_event_name, node, 0)
+                            new_node = self.follow(remote_event_name, node, 0)
+                            node.links_out.add(new_node)
+                            new_node.links_in.add(node)
                     if self.from_bpd and event_name_lower in self.bpd_event_map:
                         found_link = True
                         for remote_event_name in self.bpd_event_map[event_name_lower]:
+                            # No need to process links_in/links_out here
                             self.links.append((
                                 node.node_id,
                                 remote_event_name,
@@ -376,6 +406,7 @@ class Kismets(object):
                             unknown_node = KismetUnknownEventNode(unknown_id, event_name)
                             self.unknown_events[event_name_lower] = unknown_node
                             self.nodes[unknown_id] = unknown_node
+                        # Not adding to links_in/links_out here
                         self.links.append((
                                 node.node_id,
                                 self.unknown_events[event_name_lower].node_id,
@@ -383,7 +414,8 @@ class Kismets(object):
                                 None,
                                 ))
 
-            # Follow explicit BPD links
+            # Follow explicit BPD links.  No need to do links_in/links_out
+            # processing here.
             if node.to_behaviors:
                 for (explicit_bpd_name, explicit_bpd_event) in node.to_behaviors:
                     found_link = False
@@ -439,6 +471,35 @@ class Kismets(object):
                 nodes_to_delete.append(name)
         for name in nodes_to_delete:
             del self.nodes[name]
+
+    def redo_change_points(self):
+        """
+        Used after loading an entire kismet Sequence - our node `change_point`
+        vars are going to over-report themselves.  So loop through the nodes
+        and sort it out.
+        """
+        # First get a list of top-level nodes and clear out change_point
+        top_levels = []
+        for node in self.nodes.values():
+            if len(node.links_in) == 0:
+                node.change_point = True
+                top_levels.append(node)
+            else:
+                node.change_point = False
+
+        # Recurse through top-level nodes
+        new_seen = set()
+        for node in top_levels:
+            self.redo_change_points_recurs(new_seen, node, None)
+
+    def redo_change_points_recurs(self, seen, new_node, prev_node):
+        if new_node in seen:
+            return
+        else:
+            seen.add(new_node)
+        new_node.update_change_point(prev_node)
+        for to_link in new_node.links_out:
+            self.redo_change_points_recurs(seen, to_link, new_node)
 
 ###
 ### Functions
@@ -833,6 +894,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
                     if 'bIsCurrentDebuggerOp' in child_struct:
                         kismets.start_path(full_child_name)
             kismets.prune_unlinked()
+            kismets.redo_change_points()
         else:
             # Okay, we just (presumably) got an individual Sequence item.
             # Recurse into it and be done!
