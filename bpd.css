@@ -1,0 +1,14 @@
+.bpd_optional {
+    margin-top: 1em;
+    margin-left: 2em;
+    margin-right: 5em;
+    padding: 1em;
+    background: #eef;
+    border: 1px solid silver;
+    display: inline-block;
+}
+
+.bpd_optional p {
+    margin-top: 0px;
+    margin-bottom: .3em;
+}

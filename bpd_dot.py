@@ -293,12 +293,14 @@ class Kismets(object):
     """
 
     def __init__(self, data, bpd_event_map, seq_event_map,
-            from_bpd=None, follow_to_new_base=False):
+            from_bpd=None, follow_to_new_base=False,
+            follow_variables=True):
         self.data = data
         self.bpd_event_map = bpd_event_map
         self.seq_event_map = seq_event_map
         self.from_bpd = from_bpd
         self.follow_to_new_base = follow_to_new_base
+        self.follow_variables = follow_variables
         self.entry_points = []
         self.nodes = {}
         self.links = []
@@ -342,21 +344,22 @@ class Kismets(object):
                     node.links_out.add(new_node)
                     new_node.links_in.add(node)
 
-            # Follow variables
-            for varname in node.variable_names:
-                if varname in self.nodes:
-                    self.nodes[varname].update_change_point(node)
-                else:
-                    var_id = 'kismet_var_{}'.format(len(self.nodes))
-                    self.nodes[varname] = KismetVarNode(varname, var_id, data, node)
-                node.links_out.add(self.nodes[varname])
-                self.nodes[varname].links_in.add(node)
-                self.links.append((
-                    node.node_id,
-                    self.nodes[varname].node_id,
-                    style_seq_var_edge,
-                    None,
-                    ))
+            # Follow variables, if we're supposed to
+            if self.follow_variables:
+                for varname in node.variable_names:
+                    if varname in self.nodes:
+                        self.nodes[varname].update_change_point(node)
+                    else:
+                        var_id = 'kismet_var_{}'.format(len(self.nodes))
+                        self.nodes[varname] = KismetVarNode(varname, var_id, data, node)
+                    node.links_out.add(self.nodes[varname])
+                    self.nodes[varname].links_in.add(node)
+                    self.links.append((
+                        node.node_id,
+                        self.nodes[varname].node_id,
+                        style_seq_var_edge,
+                        None,
+                        ))
 
             # Follow event links
             if node.event_link:
@@ -630,7 +633,7 @@ def get_rce_bpd(rce):
             string_build.append('.{}'.format(element))
     return ''.join(string_build)
 
-def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=None):
+def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=None, show_kismet_vars=True):
     """
     Outputs a graphviz dot file from the given node
     """
@@ -643,6 +646,8 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
         label_suffix_list.append('in {}'.format(level_name))
     if kismet_follow_class:
         label_suffix_list.append('following kismets fully')
+    if show_kismet_vars:
+        label_suffix_list.append('showing kismet vars if applicable')
     if len(label_suffix_list) > 0:
         label_suffix = '<br/>{}'.format(', '.join(label_suffix_list))
     else:
@@ -707,7 +712,8 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
         seq_event_links = []
         kismets = Kismets(data, bpd_event_map=event_map, seq_event_map=seq_event_map,
                 from_bpd=bpd_name,
-                follow_to_new_base=kismet_follow_class)
+                follow_to_new_base=kismet_follow_class,
+                follow_variables=show_kismet_vars)
         for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
             seq_name = seq['BehaviorSequenceName']
@@ -880,7 +886,8 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
         # Set up a Kismets object, no matter what we do
         kismets = Kismets(data, bpd_event_map=event_map,
                 seq_event_map=seq_event_map,
-                follow_to_new_base=kismet_follow_class)
+                follow_to_new_base=kismet_follow_class,
+                follow_variables=show_kismet_vars)
 
         # Check to see if we've been passed a "bare" sequence object
         root_node = data.get_node_by_full_object(bpd_name)
@@ -1014,7 +1021,13 @@ if __name__ == '__main__':
 
         parser.add_argument('-f', '--follow',
             action='store_true',
-            help="Follow Kismet sequences through to other classes",
+            help="Follow Kismet sequences through to other classes (won't do anything without --level as well)",
+            )
+
+        parser.add_argument('-v', '--vars',
+            dest='kismet_vars',
+            action='store_true',
+            help="Show Kismet variables as nodes in graphs",
             )
 
         parser.add_argument('game',
@@ -1061,4 +1074,4 @@ if __name__ == '__main__':
                 english_level_label = args.level
 
         # This is silly, should have a dict to look this up
-        generate_dot(node, bpd_name, seq_event_map, args.follow, level_name=english_level_label)
+        generate_dot(node, bpd_name, seq_event_map, args.follow, level_name=english_level_label, show_kismet_vars=args.kismet_vars)

@@ -44,9 +44,18 @@ if (array_key_exists('filetype', $_REQUEST))
 }
 $follow_kismet = array_key_exists('follow_kismet', $_REQUEST);
 
+$kismet_vars = true;
+
 // Now back to our historically-deep big ol' gigantic `if` statements.
 if (array_key_exists('action', $_REQUEST))
 {
+    // If the user specifically unchecked vars, keep them unchecked
+    if (!array_key_exists('kismet_vars', $_REQUEST))
+    {
+        $kismet_vars = false;
+    }
+
+    // Now continue
     if ($_REQUEST['action'] == 'generate')
     {
         $game = $_REQUEST['game'];
@@ -65,26 +74,42 @@ if (array_key_exists('action', $_REQUEST))
                     $level = trim($_REQUEST['level']);
                     if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
 
-                        if ($level == '')
+                        $cmd_args = array();
+                        $cache_parts = array();
+
+                        $cache_parts[] = $game;
+                        $cache_parts[] = strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd));
+
+                        if ($level != '')
                         {
-                            $cache_extra = '';
-                            $cmd_extra = '';
+                            $cmd_args[] = '-l ' . $level;
+                            $cache_parts[] = strtolower($level);
+
+                            if ($follow_kismet)
+                            {
+                                $cmd_args[] = '-f';
+                                $cache_parts[] = 'follow';
+                            }
+                        }
+
+                        if ($kismet_vars)
+                        {
+                            $cmd_args[] = '-v';
+                            $cache_parts[] = 'vars';
                         }
                         else
                         {
-                            $cache_extra = '_' . strtolower($level);
-                            $cmd_extra = ' -l ' . $level;
-                            if ($follow_kismet)
-                            {
-                                $cache_extra .= '_follow';
-                                $cmd_extra .= ' -f';
-                            }
+                            $cache_parts[] = 'novars';
                         }
-                        $cache_filename = 'cache/' . $game . '_' . strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd)) . $cache_extra . '.' . $filetype;
+
+                        $cmd_args[] = $game;
+                        $cmd_args[] = $bpd;
+
+                        $cache_filename = 'cache/' . implode('_', $cache_parts) . '.' . $filetype;
                         if (!file_exists($cache_filename))
                         {
                             $output = array();
-                            exec("/usr/bin/python36 bpd_dot.py$cmd_extra $game $bpd", $output, $return_val);
+                            exec("/usr/bin/python36 bpd_dot.py " . implode(' ', $cmd_args), $output, $return_val);
                             $output_full = implode("\n", $output);
                             if ($return_val == 0)
                             {
@@ -176,6 +201,7 @@ if (array_key_exists('action', $_REQUEST))
 include('../../inc/apoc.php');
 $page->set_title('Borderlands 2 / The Pre-Sequel BPD/Kismet Graphs');
 $page->add_js('bpd_js.php');
+$page->add_css('bpd.css');
 $page->add_onload('populateLevelList();');
 $page->add_changelog('June 19, 2018', 'Initial post');
 $page->add_changelog('June 28, 2018', 'Changed to rectangles rather than ellipses for the nodes');
@@ -208,6 +234,7 @@ $page->add_changelog('unreleased', array(
     'Fixed Kismet sequence over-reporting of full classnames, when graphing entire sequence',
     'Default to SVG output',
     'Graphs will open in new tab',
+    'Option to not show kismet variables',
 ));
 $page->apoc_header();
 ?>
@@ -250,11 +277,10 @@ output for extremely large graphs.</p>
 </select>
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
-<p>
-<i>Optional: Selecting a level here will allow the tree to follow Kismet sequence
-events within the specified level.</i>
-</p>
-<blockquote>
+<div class="bpd_optional">
+<p><strong>Optional:</strong></p>
+<p>Selecting a level here will allow the tree to follow Kismet sequence
+events within the specified level.</p>
 <select name="level" id="level">
 <?php
 // May as well prepopulate this in case someone's got Javascript disabled
@@ -274,9 +300,14 @@ foreach ($levels as $game => $level_list)
 }
 ?>
 </select><br/>
-<input type="checkbox" name="follow_kismet" id="follow_kismet">
-<label for="follow_kismet"><i>Allow following Kismets through class boundaries</i></label>
-</blockquote>
+<input type="checkbox" name="follow_kismet" id="follow_kismet"<?php if ($follow_kismet) { echo ' checked'; }?>>
+<label for="follow_kismet"><i>Allow following Kismet events through class boundaries</i></label>
+</div>
+<div class="bpd_optional">
+<p><strong>Optional:</strong></p>
+<input type="checkbox" name="kismet_vars" id="kismet_vars"<?php if ($kismet_vars) { echo ' checked'; }?>>
+<label for="kismet_vars">Include Kismet variables in graphs <i>(can lead to very busy graphs, but is generally useful)</i></label>
+</div>
 </form>
 </blockquote>
 
@@ -417,11 +448,7 @@ it ever go dark, having mirrors is always nice.
 <li>Search/Highlight functionality</li>
 <li>Figure out other useful attributes to display in the nodes themselves, based on
     node type (mostly just for Kismets)</li>
-<li>Some possibilities to consider:
-    <ul>
-    <li>Checkbox to draw Kismet variables, rather than always-on?</li>
-    </ul>
-</li>
+<li>Sort level names by DLC</li>
 </ul>
 
 <? $page->apoc_footer(); ?>
