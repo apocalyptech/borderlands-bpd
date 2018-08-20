@@ -34,7 +34,7 @@ $errors = array();
 $game = 'bl2';
 
 // I should really stop nesting gigantic `if` statements.  That stops... NOW.
-$filetype = 'png';
+$filetype = 'svg';
 if (array_key_exists('filetype', $_REQUEST))
 {
     if ($_REQUEST['filetype'] == 'svg')
@@ -206,6 +206,7 @@ $page->add_changelog('August 17, 2018', array(
 ));
 $page->add_changelog('unreleased', array(
     'Fixed Kismet sequence over-reporting of full classnames, when graphing entire sequence',
+    'Default to SVG output',
 ));
 $page->apoc_header();
 ?>
@@ -234,16 +235,17 @@ if (count($errors) > 0)
 
 <blockquote>
 <form action="index.php" method="get">
-<p><strong>Note:</strong> If you are experiencing problems with very wide PNG graphs being compressed
-down into illegibility, you'll have to choose SVG output for now, instead.</p>
+<p><strong>Note:</strong> PNG graphic output supports a max. width of about 32k pixels.  Graphics
+which would be larger than that will scale down, sometimes into illegibility.  Stick with SVG
+output for extremely large graphs.</p>
 <select name="game" id="game" onChange="populateLevelList();">
 <option value="bl2"<?php if ($game == 'bl2') { echo ' selected'; } ?>>Borderlands 2</option>
 <option value="tps"<?php if ($game == 'tps') { echo ' selected'; } ?>>The Pre-Sequel</option>
 </select>
 <input type="text" name="bpd" id="bpd" size="70">
 <select name="filetype" id="filetype">
-<option value="png"<?php if ($filetype == 'png') { echo ' selected'; }?>>PNG</option>
 <option value="svg"<?php if ($filetype == 'svg') { echo ' selected'; }?>>SVG</option>
+<option value="png"<?php if ($filetype == 'png') { echo ' selected'; }?>>PNG</option>
 </select>
 <input type="hidden" name="action" value="generate">
 <input type="submit" value="Generate">
@@ -416,9 +418,8 @@ it ever go dark, having mirrors is always nice.
     node type (mostly just for Kismets)</li>
 <li>Some possibilities to consider:
     <ul>
-    <li>Default to SVG?  PNG is a bit nicer for zooming, but SVG is very handy for
-        selecting text...</li>
     <li>Checkbox to draw Kismet variables, rather than always-on?</li>
+    </ul>
 </li>
 </ul>
 
