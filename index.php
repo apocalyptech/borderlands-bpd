@@ -230,7 +230,7 @@ $page->add_changelog('August 17, 2018', array(
     'Show linked kismet variables as separate nodes',
     'Fix error on full-kismet graphs where nodes could be drawn twice',
 ));
-$page->add_changelog('unreleased', array(
+$page->add_changelog('August 19, 2018', array(
     'Fixed Kismet sequence over-reporting of full classnames, when graphing entire sequence',
     'Default to SVG output',
     'Graphs will open in new tab',
