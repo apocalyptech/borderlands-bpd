@@ -799,11 +799,18 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
 
                 # Get some info for ChangeRemoteBehaviorSequenceState
                 elif behavior_type == 'Behavior_ChangeRemoteBehaviorSequenceState':
-                    bs = data.get_struct_by_full_object(full_behavior_class)
-                    behavior_extra = '<br/>({} {})'.format(
-                            change_usability.get(bs['Action'], bs['Action']),
-                            bs['SequenceName'],
-                            )
+                    try:
+                        bs = data.get_struct_by_full_object(full_behavior_class)
+                        behavior_extra = '<br/>({} {})'.format(
+                                change_usability.get(bs['Action'], bs['Action']),
+                                bs['SequenceName'],
+                                )
+                    except KeyError:
+                        # TPS has at least one case where this fails, in
+                        # GD_Prototype_Skills.Projectiles.Projectile_SpawnSecondWindClone:BehaviorProviderDefinition_0
+                        # Really we should probably check this everywhere, but 
+                        # generate_all_dots.py should do.
+                        pass
 
                 # Get some info for SimpleAnimPlay and SimpleAnimStop
                 elif behavior_type == 'Behavior_SimpleAnimPlay' or behavior_type == 'Behavior_SimpleAnimStop':
