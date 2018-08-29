@@ -239,6 +239,7 @@ $page->add_changelog('August 19, 2018', array(
 $page->add_changelog('August 20, 2018', array(
     'Added link to Kismet/BPD Basics Wiki page',
 ));
+$page->add_changelog('August 28, 2018', 'Added VarName reporting for sequence variables');
 $page->apoc_header();
 ?>
 

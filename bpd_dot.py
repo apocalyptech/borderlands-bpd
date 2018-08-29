@@ -265,10 +265,13 @@ class KismetVarNode(KismetBaseRealNode):
     def __init__(self, name, node_id, data, prev_node):
         super().__init__(name, node_id, prev_node)
         self.extra = None
+        self.varname = None
         if 'seqvar_object' in name.lower():
             self.struct = data.get_struct_by_full_object(name)
             if 'ObjValue' in self.struct and self.struct['ObjValue'] != '':
                 self.extra = Data.get_struct_attr_obj(self.struct, 'ObjValue')
+            if 'VarName' in self.struct and self.struct['VarName'] != '':
+                self.varname = self.struct['VarName']
             if not self.extra:
                 self.extra = 'no object specified'
 
@@ -281,6 +284,8 @@ class KismetVarNode(KismetBaseRealNode):
         if self.change_point:
             lines.append('{}.'.format(self.base_class))
         lines.append(self.short_name)
+        if self.varname:
+            lines.append('"{}"'.format(self.varname))
         if self.extra:
             lines.append('({})'.format(self.extra))
         return '<br/>'.join(lines)
