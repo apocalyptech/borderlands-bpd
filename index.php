@@ -246,6 +246,7 @@ $page->add_changelog('August 28, 2018', array(
 ));
 $page->add_changelog('August 29, 2018', array(
     'Added data reporting in some more BPD behavior nodes: ChangeRemoteBehaviorSequenceState, SimpleAnimPlay, SimpleAnimStop',
+    'Show disabled BPD events in graph (only affects ten BPDs across both BL2 and TPS)',
 ));
 $page->apoc_header();
 ?>
@@ -469,8 +470,6 @@ it ever go dark, having mirrors is always nice.
 <li>Figure out other useful attributes to display in the nodes themselves, based on
     node type (mostly just for Kismets)</li>
 <li>Sort level names by DLC</li>
-<li>Right now the grapher completely omits events which are marked as disabled.  I
-    wonder if those should be drawn anyway, just in a different color or something.</li>
 </ul>
 
 <? $page->apoc_footer(); ?>

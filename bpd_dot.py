@@ -696,24 +696,31 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
             clv_data = seq['ConsolidatedLinkedVariables']
 
             for (event_idx, event) in enumerate(event_data):
-                if event['UserData']['bEnabled'] == 'True':
 
-                    var_extra = get_var_extra(event['OutputVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
-                    event_name = event['UserData']['EventName'].strip('"')
-                    event_name_lower = event_name.lower()
-                    event_id = 'event_{}_{}'.format(seq_idx, event_idx)
-                    if event_name_lower not in event_map:
-                        event_map[event_name_lower] = []
-                    event_map[event_name_lower].append(event_id)
+                var_extra = get_var_extra(event['OutputVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
+                event_name = event['UserData']['EventName'].strip('"')
+                event_name_lower = event_name.lower()
+                event_id = 'event_{}_{}'.format(seq_idx, event_idx)
+                if event_name_lower not in event_map:
+                    event_map[event_name_lower] = []
+                event_map[event_name_lower].append(event_id)
 
-                    print('    {} [label=<[{}]{}.{}[{}]{}>];'.format(
-                        event_id,
-                        seq_idx,
-                        seq_name.strip('"'),
-                        event_name,
-                        event_idx,
-                        var_extra,
-                        ))
+                format_extra=''
+                disabled_extra=''
+                if event['UserData']['bEnabled'] != 'True':
+                    format_extra=' fillcolor=gray55'
+                    disabled_extra='<br/><b>(disabled)</b>'
+
+                print('    {} [label=<[{}]{}.{}[{}]{}{}>{}];'.format(
+                    event_id,
+                    seq_idx,
+                    seq_name.strip('"'),
+                    event_name,
+                    event_idx,
+                    var_extra,
+                    disabled_extra,
+                    format_extra,
+                    ))
 
             print('')
 
@@ -936,13 +943,12 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
             clv_data = seq['ConsolidatedLinkedVariables']
 
             for (event_idx, event) in enumerate(event_data):
-                if event['UserData']['bEnabled'] == 'True':
-                    follow(event['OutputLinks']['ArrayIndexAndLength'],
-                            cold_data,
-                            behavior_data,
-                            'event_{}_{}'.format(seq_idx, event_idx),
-                            seq_idx,
-                            cold_followed)
+                follow(event['OutputLinks']['ArrayIndexAndLength'],
+                        cold_data,
+                        behavior_data,
+                        'event_{}_{}'.format(seq_idx, event_idx),
+                        seq_idx,
+                        cold_followed)
 
             print('')
 
