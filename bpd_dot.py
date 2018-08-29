@@ -790,6 +790,19 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
                         delayval = delayval[:-1]
                     behavior_extra = '<br/>(delay: {})'.format(delayval)
 
+                # Get some info for ChangeRemoteBehaviorSequenceState
+                elif behavior_type == 'Behavior_ChangeRemoteBehaviorSequenceState':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    behavior_extra = '<br/>({} {})'.format(
+                            change_usability.get(bs['Action'], bs['Action']),
+                            bs['SequenceName'],
+                            )
+
+                # Get some info for SimpleAnimPlay and SimpleAnimStop
+                elif behavior_type == 'Behavior_SimpleAnimPlay' or behavior_type == 'Behavior_SimpleAnimStop':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    behavior_extra = '<br/>{}'.format(bs['AnimName'])
+
                 # We can draw some more links if we're a remotecustomevent
                 elif behavior_type == 'Behavior_RemoteCustomEvent':
                     rce = data.get_struct_by_full_object(full_behavior_class)

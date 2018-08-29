@@ -244,6 +244,9 @@ $page->add_changelog('August 28, 2018', array(
     'Added data reporting in some BPD behavior nodes: ChangeInstanceDataSwitch, ChangeUsability, Delay, IsSequenceEnabled, and event names',
     'Fixed a bug preventing PNG images from being generated',
 ));
+$page->add_changelog('August 29, 2018', array(
+    'Added data reporting in some more BPD behavior nodes: ChangeRemoteBehaviorSequenceState, SimpleAnimPlay, SimpleAnimStop',
+));
 $page->apoc_header();
 ?>
 
