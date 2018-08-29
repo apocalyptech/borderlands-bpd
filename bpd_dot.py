@@ -642,6 +642,17 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
     """
     Outputs a graphviz dot file from the given node
     """
+
+    # A couple of lookup dicts for later on
+    change_usability = {
+            'CHANGE_Enable': 'Enable',
+            'CHANGE_Disable': 'Disable',
+            }
+    usability_type = {
+            'UT_Primary': 'primary',
+            'UT_Secondary': 'secondary',
+            }
+
     bpd_name_lower = bpd_name.lower()
     bpd = node.get_structure()
     cold_followed = set()
@@ -744,19 +755,48 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
                 var_extra = get_var_extra(behavior['LinkedVariables']['ArrayIndexAndLength'], cvld_data, clv_data, variable_data)
                 behavior_id = 'behavior_{}_{}'.format(seq_idx, behavior_idx)
 
-                print('  {} [label=<[{}] {}{}>];'.format(
-                    behavior_id,
-                    behavior_idx,
-                    behavior_class,
-                    var_extra,
-                    ))
+                # Load some extra data, depending on the behavior type.  This
+                # is also where we'll link up to kismet or other BPD events
+                behavior_extra = ''
+
+                # Get some info for ChangeInstanceDataSwitch
+                if behavior_type == 'Behavior_ChangeInstanceDataSwitch':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    behavior_extra = '<br/>{} -&gt; {}'.format(
+                            bs['SwitchName'],
+                            bs['NewValue'],
+                            )
+
+                # Get some info for IsSequenceEnabled
+                elif behavior_type == 'Behavior_IsSequenceEnabled':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    behavior_extra = '<br/>"{}"'.format(
+                            bs['SequenceName'],
+                            )
+
+                # Get some info for ChangeUsability
+                elif behavior_type == 'Behavior_ChangeUsability':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    behavior_extra = '<br/>({} {})'.format(
+                            change_usability.get(bs['ChangeUsability'], bs['ChangeUsability']),
+                            usability_type.get(bs['UsabilityType'], bs['UsabilityType']),
+                            )
+
+                # Get some info for Delay
+                elif behavior_type == 'Behavior_Delay':
+                    bs = data.get_struct_by_full_object(full_behavior_class)
+                    delayval = bs['Delay'].rstrip('0')
+                    if delayval[-1] == '.':
+                        delayval = delayval[:-1]
+                    behavior_extra = '<br/>(delay: {})'.format(delayval)
 
                 # We can draw some more links if we're a remotecustomevent
-                if behavior_type == 'Behavior_RemoteCustomEvent':
+                elif behavior_type == 'Behavior_RemoteCustomEvent':
                     rce = data.get_struct_by_full_object(full_behavior_class)
                     if rce:
                         rce_bpd = get_rce_bpd(rce)
                         event_name = rce['CustomEventName']
+                        behavior_extra = '<br/>"{}"'.format(event_name)
                         if rce_bpd.lower() == bpd_name_lower:
                             if event_name.lower() in event_map:
                                 for event_id in event_map[event_name.lower()]:
@@ -787,6 +827,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
                     rce = data.get_struct_by_full_object(full_behavior_class)
                     if rce:
                         event_name = rce[attr_name]
+                        behavior_extra = '<br/>"{}"'.format(event_name)
                         event_name_lower = event_name.lower()
                         got_a_link = False
                         # First check for any links within the same BPD
@@ -808,6 +849,15 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
                             unknown_event_id = 'unknown_event_id_{}'.format(len(unknown_events))
                             unknown_events.append((unknown_event_id, event_name))
                             seq_event_links.append((behavior_id, unknown_event_id))
+
+                # Finally, draw out the node
+                print('  {} [label=<[{}] {}{}{}>];'.format(
+                    behavior_id,
+                    behavior_idx,
+                    behavior_class,
+                    behavior_extra,
+                    var_extra,
+                    ))
 
             print('')
 

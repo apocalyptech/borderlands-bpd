@@ -37,9 +37,9 @@ $game = 'bl2';
 $filetype = 'svg';
 if (array_key_exists('filetype', $_REQUEST))
 {
-    if ($_REQUEST['filetype'] == 'svg')
+    if ($_REQUEST['filetype'] == 'png')
     {
-        $filetype = 'svg';
+        $filetype = 'png';
     }
 }
 $follow_kismet = array_key_exists('follow_kismet', $_REQUEST);
@@ -239,7 +239,11 @@ $page->add_changelog('August 19, 2018', array(
 $page->add_changelog('August 20, 2018', array(
     'Added link to Kismet/BPD Basics Wiki page',
 ));
-$page->add_changelog('August 28, 2018', 'Added VarName reporting for sequence variables');
+$page->add_changelog('August 28, 2018', array(
+    'Added VarName reporting for sequence variables',
+    'Added data reporting in some BPD behavior nodes: ChangeInstanceDataSwitch, ChangeUsability, Delay, IsSequenceEnabled, and event names',
+    'Fixed a bug preventing PNG images from being generated',
+));
 $page->apoc_header();
 ?>
 
@@ -388,6 +392,13 @@ number in brackets is the index of the behavior.
 </p>
 
 <p>
+Inbetween the behavior name and the optional variables (see below), there may 
+be some extra data provided, depending on the behavior type.  Most behavior 
+types won't report anything special, but a few will.  I am open to suggestions 
+as to more data which would be usefully provided in the graph.
+</p>
+
+<p>
 Variables are inside the nodes, underneath the title of the node.  Output
 variables are prefixed by <tt>Out:</tt>, input variables are prefixed
 by <tt>In:</tt>, and context variables are prefixed by <tt>Ctx:</tt>.
@@ -455,6 +466,8 @@ it ever go dark, having mirrors is always nice.
 <li>Figure out other useful attributes to display in the nodes themselves, based on
     node type (mostly just for Kismets)</li>
 <li>Sort level names by DLC</li>
+<li>Right now the grapher completely omits events which are marked as disabled.  I
+    wonder if those should be drawn anyway, just in a different color or something.</li>
 </ul>
 
 <? $page->apoc_footer(); ?>
