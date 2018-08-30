@@ -558,7 +558,7 @@ def follow(link, cold_data, behavior_data, coming_from, seq_idx, cold_followed):
             broken_id = 'broken_{}_{}'.format(seq_idx, cold_order_idx)
             print('  {} [label=<BROKEN> {}];'.format(broken_id, style_broken_cold))
             to_ret.append((coming_from, broken_id, None))
-            return
+            return to_ret
         (link_id, bindex) = parse_linkidandlinkedbehavior(cold['LinkIdAndLinkedBehavior'])
         behavior = behavior_data[bindex]
         going_to = 'behavior_{}_{}'.format(seq_idx, bindex)

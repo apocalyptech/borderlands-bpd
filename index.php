@@ -249,6 +249,9 @@ $page->add_changelog('August 29, 2018', array(
     'Show disabled BPD events in graph (only affects ten BPDs across both BL2 and TPS)',
     'Added Link IDs to BPD Links',
 ));
+$page->add_changelog('August 30, 2018', array(
+    'Fixed a bug which would prevent broken BPDs from graphing properly',
+));
 $page->apoc_header();
 ?>
 
