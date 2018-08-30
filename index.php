@@ -247,6 +247,7 @@ $page->add_changelog('August 28, 2018', array(
 $page->add_changelog('August 29, 2018', array(
     'Added data reporting in some more BPD behavior nodes: ChangeRemoteBehaviorSequenceState, SimpleAnimPlay, SimpleAnimStop',
     'Show disabled BPD events in graph (only affects ten BPDs across both BL2 and TPS)',
+    'Added Link IDs to BPD Links',
 ));
 $page->apoc_header();
 ?>
@@ -428,9 +429,13 @@ The links between the behaviors will have a few labels attached right
 where they leave their parent node.  The first number is the order in
 which they are called, starting with zero.  The second number, in brackets,
 is the index of the <tt>ConsolidatedOutputLinkData</tt> entry being used
-to provide the link.  Optionally, a third entry may appear under that, 
-prefixed with a lowercase "d", which will specify a delay before triggering
-the next behavior.
+to provide the link.  The third line will be the "Link ID."  Some Behaviors
+will require certain IDs for the links to work properly, so this should give
+you a feel for what the IDs are.  (See my <a href="../bl-bpdnumbers/">BPD
+Number Calculator page</a> for information on how those relate to the values
+you'll see in the BPDs themselves.)  Then, an optional fourth entry may appear
+under that, prefixed with a lowercase "d", which will specify a delay
+before triggering the next behavior.
 </p>
 
 <p>

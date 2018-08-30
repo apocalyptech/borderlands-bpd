@@ -28,6 +28,7 @@
 
 import os
 import sys
+import struct
 import argparse
 from ftexplorer.data import Data
 from level_sequence_event_names import level_sequence_event_names
@@ -49,6 +50,7 @@ from level_sequence_event_names import level_sequence_event_names
 ###
 
 style_default = 'shape=box style=rounded'
+style_bpd_edge = 'fontsize=11'
 style_kismet_default = 'shape=box style="rounded,filled" fillcolor=cadetblue1'
 style_broken_cold = 'style=filled fillcolor=red'
 style_event = 'style=filled fillcolor=chartreuse2'
@@ -513,23 +515,37 @@ class Kismets(object):
 ### Functions
 ###
 
-def compliment(number):
+def parse_arrayindexandlength(number):
     """
-    Returns a two's-compliment tuple for the given number.
+    Returns an array index and length tuple for the given number.
+    """
+    # Could just use >> and & for this, but since we have to be more
+    # careful with LinkIdAndLinkedBehavior anyway, since that one's
+    # weirder, we may as well just use struct here, as well.
+    number = int(number)
+    byteval = struct.pack('>i', number)
+    return struct.unpack('>HH', byteval)
+
+def parse_linkidandlinkedbehavior(number):
+    """
+    Returns a link ID index and behavior tuple for the given number.
     """
     number = int(number)
-    one = (number >> 16)
-    two = (number & 0xFF)
-    return (one, two)
+    byteval = struct.pack('>i', number)
+    (linkid, junk, behavior) = struct.unpack('>bbH', byteval)
+    return (linkid, behavior)
 
 def follow(link, cold_data, behavior_data, coming_from, seq_idx, cold_followed):
     """
-    Follows the given `link` (being a two's-compliment number of the sort
+    Follows the given `link` (being a compound number of the sort
     found in BPDs) through the given `behavior_data`, using `cold_data`
     as the glue.  `coming_from` is the source which we've been linked
-    from.  `seq_idx` is our current BPD index
+    from.  `seq_idx` is our current BPD index.  Returns a list of tuples
+    which can then be drawn.  May write out broken nodes, if any are
+    found.
     """
-    (link_index, link_length) = compliment(link)
+    to_ret = []
+    (link_index, link_length) = parse_arrayindexandlength(link)
     for (cold_order_idx, cold_index) in enumerate(range(link_index, link_index+link_length)):
         full_cold_index = '{}_{}'.format(seq_idx, cold_index)
         if full_cold_index in cold_followed:
@@ -541,9 +557,9 @@ def follow(link, cold_data, behavior_data, coming_from, seq_idx, cold_followed):
         except IndexError:
             broken_id = 'broken_{}_{}'.format(seq_idx, cold_order_idx)
             print('  {} [label=<BROKEN> {}];'.format(broken_id, style_broken_cold))
-            print('  {} -> {}'.format(coming_from, broken_id))
+            to_ret.append((coming_from, broken_id, None))
             return
-        (link_id, bindex) = compliment(cold['LinkIdAndLinkedBehavior'])
+        (link_id, bindex) = parse_linkidandlinkedbehavior(cold['LinkIdAndLinkedBehavior'])
         behavior = behavior_data[bindex]
         going_to = 'behavior_{}_{}'.format(seq_idx, bindex)
         delay = round(float(cold['ActivateDelay']), 6)
@@ -553,23 +569,25 @@ def follow(link, cold_data, behavior_data, coming_from, seq_idx, cold_followed):
             if int(delay) == delay:
                 delay = round(delay)
             delay_extra = '<br/>d{}'.format(delay)
-        print('  {} -> {} [taillabel=<{}<br/>[{}]{}>];'.format(coming_from, going_to, cold_order_idx, cold_index, delay_extra))
-        follow(behavior['OutputLinks']['ArrayIndexAndLength'],
+        to_ret.append((coming_from, going_to,
+            'taillabel=<{}<br/>[{}]<br/>{}{}>'.format(cold_order_idx, cold_index, link_id, delay_extra)))
+        to_ret.extend(follow(behavior['OutputLinks']['ArrayIndexAndLength'],
             cold_data,
             behavior_data,
             going_to,
             seq_idx,
             cold_followed,
-            )
+            ))
+    return to_ret
 
 def get_var_list(number, cvld_data, clv_data, variable_data):
-    (var_index, var_len) = compliment(number)
+    (var_index, var_len) = parse_arrayindexandlength(number)
     var_list = []
     for cvld_idx in range(var_index, var_index+var_len):
         cvld = cvld_data[cvld_idx]
         var_name = cvld['PropertyName']
         var_type_full = cvld['VariableLinkType']
-        (link_index, link_len) = compliment(cvld['LinkedVariables']['ArrayIndexAndLength'])
+        (link_index, link_len) = parse_arrayindexandlength(cvld['LinkedVariables']['ArrayIndexAndLength'])
         # This is stupid because our ft-explorer parsing is stupid.  Doesn't really
         # handle lists of numbers too well.  We'll just pretend.
         clv_data_real = [int(p) for p in clv_data.split(',')]
@@ -672,6 +690,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
     print('')
     print('  labelloc = "t";')
     print('  fontsize = 25;')
+    print('  ranksep = 0.5;')
     print('  label = <{}{}>;'.format(bpd_name, label_suffix))
     print('  node [{}];'.format(style_default))
     print('')
@@ -939,6 +958,7 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
             print('  }')
             print('')
 
+        bpd_links = []
         for (seq_idx, seq) in enumerate(bpd['BehaviorSequences']):
 
             seq_name = seq['BehaviorSequenceName']
@@ -950,13 +970,27 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
             clv_data = seq['ConsolidatedLinkedVariables']
 
             for (event_idx, event) in enumerate(event_data):
-                follow(event['OutputLinks']['ArrayIndexAndLength'],
+                bpd_links.extend(follow(event['OutputLinks']['ArrayIndexAndLength'],
                         cold_data,
                         behavior_data,
                         'event_{}_{}'.format(seq_idx, event_idx),
                         seq_idx,
-                        cold_followed)
+                        cold_followed))
 
+        print('')
+
+        # Now actually draw the BPD edges.  Doing these at the end so I can style
+        # them all at once
+        if len(bpd_links) > 0:
+            print('  {')
+            print('    edge [{}];'.format(style_bpd_edge))
+            for (from_behavior, to_behavior, label) in bpd_links:
+                if label:
+                    label = ' [{}]'.format(label)
+                else:
+                    label = ''
+                print('    {} -> {}{};'.format(from_behavior, to_behavior, label))
+            print('  }')
             print('')
 
     else:
