@@ -698,7 +698,10 @@ def generate_dot(node, bpd_name, seq_event_map, kismet_follow_class, level_name=
     # First bit of processing is just if we've been handed a
     # BPD.  This used to be our only mode!  Now we support Kismet
     # stuff, too, though.
-    if 'behaviorproviderdefinition' in bpd_name_lower:
+
+    # Some BPDs don't actually have 'BehaviorProviderDefinition' in the name!
+    #if 'behaviorproviderdefinition' in bpd_name_lower:
+    if 'BehaviorSequences' in bpd:
 
         is_bpd = True
 

@@ -252,6 +252,9 @@ $page->add_changelog('August 29, 2018', array(
 $page->add_changelog('August 30, 2018', array(
     'Fixed a bug which would prevent broken BPDs from graphing properly',
 ));
+$page->add_changelog('December 31, 2018', array(
+    'Fixed a bug which was preventing BPDs without <tt>BehaviorProviderDefinition</tt> in their name from being graphed properly',
+));
 $page->apoc_header();
 ?>
 
