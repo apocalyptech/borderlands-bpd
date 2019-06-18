@@ -255,6 +255,9 @@ $page->add_changelog('August 30, 2018', array(
 $page->add_changelog('December 31, 2018', array(
     'Fixed a bug which was preventing BPDs without <tt>BehaviorProviderDefinition</tt> in their name from being graphed properly',
 ));
+$page->add_changelog('June 18, 2019', array(
+    'Added data for DLC5 (Commander Lilith) - missing map info for Mt. Scarab Research Center, though',
+));
 $page->apoc_header();
 ?>
 

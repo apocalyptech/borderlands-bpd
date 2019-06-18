@@ -1071,14 +1071,43 @@ if __name__ == '__main__':
             print('ERROR: "{}" directory must exist, closing.'.format(dotdir))
             sys.exit(1)
 
-        print('About to generate dotfiles for ALL BPDs in both BL2 and TPS.')
+        bl2_start_from = 0
+        tps_start_from = 0
+        if len(sys.argv) > 1:
+            try:
+                bl2_start_from = int(sys.argv[1])
+            except ValueError:
+                pass
+        if len(sys.argv) > 2:
+            try:
+                tps_start_from = int(sys.argv[2])
+            except ValueError:
+                pass
+
+        if bl2_start_from == 0 and tps_start_from == 0:
+            print('About to generate dotfiles for ALL BPDs in both BL2 and TPS.')
+        else:
+            print('About to generate dotfiles for BPDs in both BL2 and TPS.')
+            print('  BL2 start: {}'.format(bl2_start_from))
+            print('  TPS start: {}'.format(tps_start_from))
         print('Ctrl-C now if that\'s not what you want.')
         print('')
         print('(Hit a key to continue)')
         sys.stdin.readline()
 
+        bpd_blacklist = set([
+            # With our DLC5 update, these BPDs seem to reference some objects which can't be dumped.
+            # Need to verify that this has actually changed, or just a weird dump error...
+            'GD_Orchid_CrystaliskAqua.Character.AIDef_Orchid_CrystaliskAqua:AIBehaviorProviderDefinition_1',
+            'GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_B_FootCrystalAqua:BehaviorProviderDefinition_0',
+            'GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_L_FootCrystalAqua:BehaviorProviderDefinition_0',
+            'GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_R_FootCrystalAqua:BehaviorProviderDefinition_0',
+            'GD_Orchid_PirateQueen_Combat.Character.AIDef_Orchid_PirateQueen_Combat:AIBehaviorProviderDefinition_1',
+            'GD_Sage_SM_BigFeetData.Creature.Character.AIDef_Sage_BigFeet_Creature:AIBehaviorProviderDefinition_1',
+            ])
+
         generated = 0
-        for game in ['BL2', 'TPS']:
+        for (game, start_from) in [('BL2', bl2_start_from), ('TPS', tps_start_from)]:
 
             data = Data(game)
 
@@ -1087,14 +1116,16 @@ if __name__ == '__main__':
             objects.extend(data.get_all_by_type('BehaviorProviderDefinition'))
 
             max_len_seen = 0
-            for bpd_name in sorted(objects):
+            for (idx, bpd_name) in enumerate(sorted(objects)[start_from:]):
+                if bpd_name in bpd_blacklist:
+                    continue
                 with open('{}/{}_{}.dot'.format(dotdir, game, bpd_name), 'w') as df:
 
                     # Redirect stdout.  This is hokey, but whatever.
                     sys.stdout = df
 
                     # Figure out out string to report to the user
-                    report_str = 'Processing {} {}'.format(game, bpd_name)
+                    report_str = 'Processing {} #{} - {}'.format(game, idx+start_from, bpd_name)
                     if len(report_str) > 120:
                         report_str = '{}...'.format(report_str[:117])
                     if len(report_str) > max_len_seen:
