@@ -1109,45 +1109,47 @@ if __name__ == '__main__':
         generated = 0
         for (game, start_from) in [('BL2', bl2_start_from), ('TPS', tps_start_from)]:
 
-            data = Data(game)
+            if start_from != -1:
 
-            objects = []
-            objects.extend(data.get_all_by_type('AIBehaviorProviderDefinition'))
-            objects.extend(data.get_all_by_type('BehaviorProviderDefinition'))
+                data = Data(game)
 
-            max_len_seen = 0
-            for (idx, bpd_name) in enumerate(sorted(objects)[start_from:]):
-                if bpd_name in bpd_blacklist:
-                    continue
-                with open('{}/{}_{}.dot'.format(dotdir, game, bpd_name), 'w') as df:
+                objects = []
+                objects.extend(data.get_all_by_type('AIBehaviorProviderDefinition'))
+                objects.extend(data.get_all_by_type('BehaviorProviderDefinition'))
 
-                    # Redirect stdout.  This is hokey, but whatever.
-                    sys.stdout = df
+                max_len_seen = 0
+                for (idx, bpd_name) in enumerate(sorted(objects)[start_from:]):
+                    if bpd_name in bpd_blacklist:
+                        continue
+                    with open('{}/{}_{}.dot'.format(dotdir, game, bpd_name), 'w') as df:
 
-                    # Figure out out string to report to the user
-                    report_str = 'Processing {} #{} - {}'.format(game, idx+start_from, bpd_name)
-                    if len(report_str) > 120:
-                        report_str = '{}...'.format(report_str[:117])
-                    if len(report_str) > max_len_seen:
-                        max_len_seen = len(report_str)
-                        spaces = ''
-                    else:
-                        spaces = ' '*(max_len_seen-len(report_str))
-                    sys.stderr.write("{}{}\r".format(report_str, spaces))
+                        # Redirect stdout.  This is hokey, but whatever.
+                        sys.stdout = df
 
-                    # Load the node, complaining if we couldn't find it
-                    node = data.get_node_by_full_object(bpd_name)
-                    if not node:
-                        print('', file=sys.stderr)
-                        print('ERROR: {} {} not found'.format(game, bpd_name), file=sys.stderr)
+                        # Figure out out string to report to the user
+                        report_str = 'Processing {} #{} - {}'.format(game, idx+start_from, bpd_name)
+                        if len(report_str) > 120:
+                            report_str = '{}...'.format(report_str[:117])
+                        if len(report_str) > max_len_seen:
+                            max_len_seen = len(report_str)
+                            spaces = ''
+                        else:
+                            spaces = ' '*(max_len_seen-len(report_str))
+                        sys.stderr.write("{}{}\r".format(report_str, spaces))
 
-                    # aaaand generate.
-                    try:
-                        generate_dot(node, bpd_name, {}, False)
-                        generated += 1
-                    except Exception as e:
-                        print('', file=sys.stderr)
-                        raise e
+                        # Load the node, complaining if we couldn't find it
+                        node = data.get_node_by_full_object(bpd_name)
+                        if not node:
+                            print('', file=sys.stderr)
+                            print('ERROR: {} {} not found'.format(game, bpd_name), file=sys.stderr)
+
+                        # aaaand generate.
+                        try:
+                            generate_dot(node, bpd_name, {}, False)
+                            generated += 1
+                        except Exception as e:
+                            print('', file=sys.stderr)
+                            raise e
 
         print('', file=sys.stderr)
         print('', file=sys.stderr)

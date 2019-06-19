@@ -208,6 +208,9 @@ level_sequence_event_names = {
             'djradioon': [
                 'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.ThisJustIn.SeqEvent_RemoteEvent_2',
             ],
+            'dontknowjack_turnonwindmill': [
+                'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.YouDontKnowJack.Windmill.SeqEvent_RemoteEvent_1',
+            ],
             'glowscale': [
                 'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.Episode15.SeqEvent_RemoteEvent_13',
             ],
@@ -239,6 +242,9 @@ level_sequence_event_names = {
             'thisjustin_radiostatioopened': [
                 'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.ThisJustIn.SeqEvent_RemoteEvent_0',
                 'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.ThisJustIn.SeqEvent_RemoteEvent_1',
+            ],
+            'youdontknowjack_turnonwindmillswitch': [
+                'Fyrestone_Dynamic.TheWorld:PersistentLevel.Main_Sequence.YouDontKnowJack.Windmill.SeqEvent_RemoteEvent_0',
             ],
         },
         'backburner_p': {
@@ -1637,127 +1643,7 @@ level_sequence_event_names = {
                 'Helios_UranusArena.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
             ],
         },
-        'gaiussanctuary_p': {
-            'activate spore only': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_12',
-            ],
-            'activate tentacle': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_20',
-            ],
-            'attackburrow': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_14',
-            ],
-            'attackslam': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_6',
-            ],
-            'attacksweapl': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_2',
-            ],
-            'attacksweapr': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_19',
-            ],
-            'checkhitbox': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_11',
-            ],
-            'checkplayerposition1': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_15',
-            ],
-            'checkplayerposition2': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_16',
-            ],
-            'checkplayerposition3': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_17',
-            ],
-            'checkplayerposition4': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_1',
-            ],
-            'eastwall_down': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_5',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
-            ],
-            'eastwall_up': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_4',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_3',
-            ],
-            'ep3_shieldup': [
-                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_9',
-            ],
-            'hectormeleestart': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_33',
-            ],
-            'hectormeleestop': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_32',
-            ],
-            'hitboxon': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_3',
-            ],
-            'hurt2': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_0',
-            ],
-            'leveloff': [
-                'GaiusSanctuary_P.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
-            'magichappen': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_23',
-            ],
-            'musiconload': [
-                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
-            ],
-            'northwall_down': [
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
-            ],
-            'northwall_up': [
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
-            're_dialoguelilithcassiusgeteridium': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
-            're_dialoguelilithcassiusgeteridiumload': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
-            ],
-            'reset': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_35',
-            ],
-            'sec1 activation': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_21',
-            ],
-            'sec2 activation': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_22',
-            ],
-            'sec3 activation': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_18',
-            ],
-            'southwall_down': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_10',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_4',
-            ],
-            'southwall_up': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_9',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_5',
-            ],
-            'start boss music': [
-                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
-            ],
-            'stop boss music': [
-                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
-            'turnoff': [
-                'GaiusSanctuary_Moxxi.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
-            'updefence': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_13',
-            ],
-            'westwall_down': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_7',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_6',
-            ],
-            'westwall_up': [
-                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_8',
-                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_7',
-            ],
-            're_vinesdisappear': [
-                'GaiusSanctuary_Boss.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-            ],
+        'sanctintro_p': {
         },
         'banditslaughter_p': {
             'rm_conveyback': [
@@ -5003,6 +4889,26 @@ level_sequence_event_names = {
                 'Mines_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_12',
             ],
         },
+        'researchcenter_p': {
+            'getlocation': [
+                'ResearchCenter_MissionMain.TheWorld:PersistentLevel.Main_Sequence.PlotMission050.SeqEvent_RemoteEvent_21',
+            ],
+            'isplayerinbadarea': [
+                'ResearchCenter_MissionMain.TheWorld:PersistentLevel.Main_Sequence.PlotMission050.SeqEvent_RemoteEvent_18',
+            ],
+            're_opensesame': [
+                'ResearchCenter_MissionMain.TheWorld:PersistentLevel.Main_Sequence.PlotMission050.SeqEvent_RemoteEvent_1',
+            ],
+            're_startvohectorfinal': [
+                'ResearchCenter_MissionSide.TheWorld:PersistentLevel.Main_Sequence.Echoes.SeqEvent_RemoteEvent_0',
+            ],
+            'start boss music': [
+                'ResearchCenter_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
+            ],
+            'stop boss music': [
+                'ResearchCenter_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+        },
         'templeslaughter_p': {
             'achieve_swordpullout': [
                 'TempleSlaughter_P.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
@@ -6069,6 +5975,128 @@ level_sequence_event_names = {
             ],
             'toggleconfetti': [
                 'RobotSlaughter_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_5',
+            ],
+        },
+        'gaiussanctuary_p': {
+            'activate spore only': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_12',
+            ],
+            'activate tentacle': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_20',
+            ],
+            'attackburrow': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_14',
+            ],
+            'attackslam': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_6',
+            ],
+            'attacksweapl': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_2',
+            ],
+            'attacksweapr': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_19',
+            ],
+            'checkhitbox': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_11',
+            ],
+            'checkplayerposition1': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_15',
+            ],
+            'checkplayerposition2': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_16',
+            ],
+            'checkplayerposition3': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_17',
+            ],
+            'checkplayerposition4': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_1',
+            ],
+            'eastwall_down': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_5',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
+            ],
+            'eastwall_up': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_4',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_3',
+            ],
+            'ep3_shieldup': [
+                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_9',
+            ],
+            'hectormeleestart': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_33',
+            ],
+            'hectormeleestop': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_32',
+            ],
+            'hitboxon': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_3',
+            ],
+            'hurt2': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_0',
+            ],
+            'leveloff': [
+                'GaiusSanctuary_P.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+            'magichappen': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_23',
+            ],
+            'musiconload': [
+                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
+            ],
+            'northwall_down': [
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
+            ],
+            'northwall_up': [
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+            're_dialoguelilithcassiusgeteridium': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+            're_dialoguelilithcassiusgeteridiumload': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
+            ],
+            'reset': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_35',
+            ],
+            'sec1 activation': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_21',
+            ],
+            'sec2 activation': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_22',
+            ],
+            'sec3 activation': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_18',
+            ],
+            'southwall_down': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_10',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_4',
+            ],
+            'southwall_up': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_9',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_5',
+            ],
+            'start boss music': [
+                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
+            ],
+            'stop boss music': [
+                'GaiusSanctuary_Audio.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+            'turnoff': [
+                'GaiusSanctuary_Moxxi.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
+            ],
+            'updefence': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_13',
+            ],
+            'westwall_down': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_7',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_6',
+            ],
+            'westwall_up': [
+                'GaiusSanctuary_MissionMain.TheWorld:PersistentLevel.Main_Sequence.HectorBossFightLogic.SeqEvent_RemoteEvent_8',
+                'GaiusSanctuary_Nav.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_7',
+            ],
+            're_vinesdisappear': [
+                'GaiusSanctuary_Boss.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
             ],
         },
         'iris_dl2_interior_p': {
@@ -9506,7 +9534,6 @@ level_sequence_event_names = {
             ],
             'lighthousebeam_enabled': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_3',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_3',
             ],
             'orchid_endgame_missionstart': [
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.Lighthouse_Active.SeqEvent_RemoteEvent_0',
@@ -9543,11 +9570,9 @@ level_sequence_event_names = {
             ],
             'orchid_sm_scurvydogs_activatefruittrees': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_1',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_1',
             ],
             'orchid_sm_scurvydogs_disablefruittrees': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_2',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_2',
             ],
             'orchid_sm_smellsvictory_killshivspike': [
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_6',
@@ -9596,7 +9621,6 @@ level_sequence_event_names = {
             ],
             'randomhovercraftactive': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_0',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_0',
             ],
             'refinerylift01_enable': [
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_18',
@@ -9609,7 +9633,6 @@ level_sequence_event_names = {
             ],
             'refinerylift01_switch_used': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_17',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_17',
             ],
             'refinerylift02_enable': [
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_11',
@@ -9631,12 +9654,10 @@ level_sequence_event_names = {
             ],
             'sunrise_start': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_5',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_5',
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_5',
             ],
             'sunset_end': [
                 'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.SeqEvent_RemoteEvent_6',
-                'Orchid_SaltFlats_Combat.TheWorld:PersistentLevel.Main_Sequence.CaraVan.SeqEvent_RemoteEvent_6',
             ],
             'testkill': [
                 'Orchid_SaltFlats_Dynamic.TheWorld:PersistentLevel.Main_Sequence.Lighthouse_Active.SeqEvent_RemoteEvent_2',

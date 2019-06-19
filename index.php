@@ -33,6 +33,20 @@ require_once('levels.php');
 $errors = array();
 $game = 'bl2';
 
+// BPD Blacklist
+$bpd_blacklist = array(
+    'bl2' => array(
+        'gd_orchid_crystaliskaqua.character.aidef_orchid_crystaliskaqua:aibehaviorproviderdefinition_1' => true,
+        'gd_orchid_crystaliskaqua.hitregions.hitregion_b_footcrystalaqua:behaviorproviderdefinition_0' => true,
+        'gd_orchid_crystaliskaqua.hitregions.hitregion_l_footcrystalaqua:behaviorproviderdefinition_0' => true,
+        'gd_orchid_crystaliskaqua.hitregions.hitregion_r_footcrystalaqua:behaviorproviderdefinition_0' => true,
+        'gd_orchid_piratequeen_combat.character.aidef_orchid_piratequeen_combat:aibehaviorproviderdefinition_1' => true,
+        'gd_sage_sm_bigfeetdata.creature.character.aidef_sage_bigfeet_creature:aibehaviorproviderdefinition_1' => true,
+    ),
+    'tps' => array(
+    ),
+);
+
 // I should really stop nesting gigantic `if` statements.  That stops... NOW.
 $filetype = 'svg';
 if (array_key_exists('filetype', $_REQUEST))
@@ -69,120 +83,127 @@ if (array_key_exists('action', $_REQUEST))
                 {
                     $bpd = $matches[1];
                 }
-                if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
+                if (!array_key_exists(strtolower($bpd), $bpd_blacklist[$game]))
                 {
-                    $level = trim($_REQUEST['level']);
-                    if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
+                    if (preg_match('/^[0-9a-zA-Z:_\.]+$/', $bpd))
+                    {
+                        $level = trim($_REQUEST['level']);
+                        if ($level == '' or array_key_exists($level, $levels_by_id[$game])) {
 
-                        $cmd_args = array();
-                        $cache_parts = array();
+                            $cmd_args = array();
+                            $cache_parts = array();
 
-                        $cache_parts[] = $game;
-                        $cache_parts[] = strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd));
+                            $cache_parts[] = $game;
+                            $cache_parts[] = strtolower(preg_replace('/[^0-9a-zA-Z_]/', '_', $bpd));
 
-                        if ($level != '')
-                        {
-                            $cmd_args[] = '-l ' . $level;
-                            $cache_parts[] = strtolower($level);
-
-                            if ($follow_kismet)
+                            if ($level != '')
                             {
-                                $cmd_args[] = '-f';
-                                $cache_parts[] = 'follow';
-                            }
-                        }
+                                $cmd_args[] = '-l ' . $level;
+                                $cache_parts[] = strtolower($level);
 
-                        if ($kismet_vars)
-                        {
-                            $cmd_args[] = '-v';
-                            $cache_parts[] = 'vars';
-                        }
-                        else
-                        {
-                            $cache_parts[] = 'novars';
-                        }
-
-                        $cmd_args[] = $game;
-                        $cmd_args[] = $bpd;
-
-                        $cache_filename = 'cache/' . implode('_', $cache_parts) . '.' . $filetype;
-                        if (!file_exists($cache_filename))
-                        {
-                            $output = array();
-                            exec("/usr/bin/python36 bpd_dot.py " . implode(' ', $cmd_args), $output, $return_val);
-                            $output_full = implode("\n", $output);
-                            if ($return_val == 0)
-                            {
-                                $descriptors = array(
-                                   0 => array("pipe", "r"),
-                                   1 => array("pipe", "w"),
-                                   2 => array("pipe", "w")
-                                );
-                                $pipes = array();
-                                $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -T' . $filetype, $descriptors, $pipes);
-
-                                if (is_resource($process))
+                                if ($follow_kismet)
                                 {
-                                    fwrite($pipes[0], $output_full);
-                                    fclose($pipes[0]);
-                                    $image = stream_get_contents($pipes[1]);
-                                    fclose($pipes[1]);
-                                    fclose($pipes[2]);
-                                    proc_close($process);
+                                    $cmd_args[] = '-f';
+                                    $cache_parts[] = 'follow';
+                                }
+                            }
 
-                                    $outfile = fopen($cache_filename, 'wb');
-                                    if ($outfile)
+                            if ($kismet_vars)
+                            {
+                                $cmd_args[] = '-v';
+                                $cache_parts[] = 'vars';
+                            }
+                            else
+                            {
+                                $cache_parts[] = 'novars';
+                            }
+
+                            $cmd_args[] = $game;
+                            $cmd_args[] = $bpd;
+
+                            $cache_filename = 'cache/' . implode('_', $cache_parts) . '.' . $filetype;
+                            if (!file_exists($cache_filename))
+                            {
+                                $output = array();
+                                exec("/usr/bin/python36 bpd_dot.py " . implode(' ', $cmd_args), $output, $return_val);
+                                $output_full = implode("\n", $output);
+                                if ($return_val == 0)
+                                {
+                                    $descriptors = array(
+                                       0 => array("pipe", "r"),
+                                       1 => array("pipe", "w"),
+                                       2 => array("pipe", "w")
+                                    );
+                                    $pipes = array();
+                                    $process = proc_open('/usr/bin/unflatten -l 10 -c 99 -f | /usr/bin/dot -T' . $filetype, $descriptors, $pipes);
+
+                                    if (is_resource($process))
                                     {
-                                        fwrite($outfile, $image);
-                                        fclose($outfile);
+                                        fwrite($pipes[0], $output_full);
+                                        fclose($pipes[0]);
+                                        $image = stream_get_contents($pipes[1]);
+                                        fclose($pipes[1]);
+                                        fclose($pipes[2]);
+                                        proc_close($process);
+
+                                        $outfile = fopen($cache_filename, 'wb');
+                                        if ($outfile)
+                                        {
+                                            fwrite($outfile, $image);
+                                            fclose($outfile);
+                                        }
+                                        else
+                                        {
+                                            array_push($errors, 'Could not open cache for writing');
+                                        }
                                     }
                                     else
                                     {
-                                        array_push($errors, 'Could not open cache for writing');
+                                        array_push($errors, 'Error generating graph');
                                     }
+                                }
+                                elseif ($return_val == 2)
+                                {
+                                    array_push($errors, 'Specified class was not found');
                                 }
                                 else
                                 {
-                                    array_push($errors, 'Error generating graph');
+                                    array_push($errors, 'Unknown error encountered when generating graph; probably a code problem.  Let me know what your object name and options were, please!');
                                 }
                             }
-                            elseif ($return_val == 2)
+                            if (file_exists($cache_filename))
                             {
-                                array_push($errors, 'Specified class was not found');
+                                if ($filetype == 'svg')
+                                {
+                                    header('Content-Type: image/svg+xml');
+                                    //header('Content-Disposition: attachment; filename="bpd_graph.svg"');
+                                }
+                                else
+                                {
+                                    header('Content-Type: image/png');
+                                    //header('Content-Disposition: attachment; filename="bpd_image.png"');
+                                }
+                                readfile($cache_filename);
+                                exit();
                             }
-                            else
+                            elseif (count($errors) == 0)
                             {
-                                array_push($errors, 'Unknown error encountered when generating graph; probably a code problem.  Let me know what your object name and options were, please!');
+                                array_push($errors, 'Could not write to cache');
                             }
                         }
-                        if (file_exists($cache_filename))
+                        else
                         {
-                            if ($filetype == 'svg')
-                            {
-                                header('Content-Type: image/svg+xml');
-                                //header('Content-Disposition: attachment; filename="bpd_graph.svg"');
-                            }
-                            else
-                            {
-                                header('Content-Type: image/png');
-                                //header('Content-Disposition: attachment; filename="bpd_image.png"');
-                            }
-                            readfile($cache_filename);
-                            exit();
-                        }
-                        elseif (count($errors) == 0)
-                        {
-                            array_push($errors, 'Could not write to cache');
+                            array_push($errors, 'Invalid level specified');
                         }
                     }
                     else
                     {
-                        array_push($errors, 'Invalid level specified');
+                        array_push($errors, 'Invalid class specified');
                     }
                 }
                 else
                 {
-                    array_push($errors, 'Invalid class specified');
+                    array_push($errors, 'Specified BPD cannot be dumped due to data errors (see below)');
                 }
             }
             else
@@ -257,6 +278,10 @@ $page->add_changelog('December 31, 2018', array(
 ));
 $page->add_changelog('June 18, 2019', array(
     'Added data for DLC5 (Commander Lilith) - missing map info for Mt. Scarab Research Center, though',
+));
+$page->add_changelog('June 19, 2019', array(
+    'Updated data which includes Mt. Scarab Research Center',
+    'Added note about six currently-broken BPDs',
 ));
 $page->apoc_header();
 ?>
@@ -458,6 +483,26 @@ explicitly link to other BPDs.
 </p>
 
 </blockquote>
+
+<h2>"Broken" BPDs</h2>
+
+<p>
+As of the newest DLC update (Commander Lilith and the Fight for Sanctuary), the
+data for six specific BPDs is partially missing, and prevents them from being
+graphed.  This is because some BPD subobjects are apparently dynamically-named,
+and the number suffix can vary depending on when the level is loaded, so the
+dumps don't include those objects anymore.  I currently don't really have any
+plans to fix this, but just for reference, here are the broken BPDs:
+</p>
+
+<ul>
+<li><tt>GD_Orchid_CrystaliskAqua.Character.AIDef_Orchid_CrystaliskAqua:AIBehaviorProviderDefinition_1</tt></li>
+<li><tt>GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_B_FootCrystalAqua:BehaviorProviderDefinition_0</tt></li>
+<li><tt>GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_L_FootCrystalAqua:BehaviorProviderDefinition_0</tt></li>
+<li><tt>GD_Orchid_CrystaliskAqua.HitRegions.HitRegion_R_FootCrystalAqua:BehaviorProviderDefinition_0</tt></li>
+<li><tt>GD_Orchid_PirateQueen_Combat.Character.AIDef_Orchid_PirateQueen_Combat:AIBehaviorProviderDefinition_1</tt></li>
+<li><tt>GD_Sage_SM_BigFeetData.Creature.Character.AIDef_Sage_BigFeet_Creature:AIBehaviorProviderDefinition_1</tt></li>
+</ul>
 
 <h2>Sourcecode</h2>
 
