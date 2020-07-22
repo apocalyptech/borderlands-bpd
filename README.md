@@ -1,7 +1,7 @@
 Borderlands Online BPD Generator
 ================================
 
-This is the code which runs my [Borderlands 2 / The Pre-Sequel BPD Graphs](http://apocalyptech.com/games/bl-bpd/)
+This is the code which runs my [Borderlands 2 / The Pre-Sequel BPD Graphs](https://apocalyptech.com/games/bl-bpd/)
 generation page.  The meat of the application is actually a Python 3
 script which makes use of some of my [FT Explorer](https://github.com/apocalyptech/ft-explorer)
 data libraries, and the rest is a PHP shell which goes around that.
