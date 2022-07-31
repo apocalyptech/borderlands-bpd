@@ -1,4 +1,4 @@
-#!/usr/bin/env python36
+#!/usr/bin/env python3
 # vim: set expandtab tabstop=4 shiftwidth=4:
 
 # Copyright (c) 2018, CJ Kucera
@@ -176,7 +176,7 @@ class KismetNode(KismetBaseRealNode):
             self.to_behaviors = []
             self.to_events = []
             for behavior_full in self.struct['Behaviors']:
-                if behavior_full and behavior_full != '':
+                if behavior_full and behavior_full != '' and behavior_full != 'None':
                     (behavior_type, behavior_name, junk2) = behavior_full.split("'")
                     self.behaviors.append(behavior_name)
                     behavior_types.append(behavior_type)
